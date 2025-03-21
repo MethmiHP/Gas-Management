@@ -1,0 +1,4 @@
+touch controller/.gitkeep
+touch model/.gitkeep
+touch routes/.gitkeep
+touch frontend/.gitkeep
