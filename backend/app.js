@@ -2,7 +2,7 @@
 const express = require("express"); // A web framework for handling HTTP requests and setting up routes
 const mongoose = require("mongoose"); // A library for interacting with MongoDB
 const cors = require("cors"); // Middleware to handle cross-origin resource sharing
-
+const productRoutes = require("./routes/productRoutes")
 // Creating an instance of an express application
 const app = express();
 
@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
   // Middleware
 app.use(express.json()); // Enables parsing of incoming JSON data in request bodies
 app.use(cors()); 
-
+app.use("/api/products", productRoutes);
   mongoose
   .connect("mongodb+srv://admin:sGPUhAWdhvk0TVkY@cluster0.lmqpi.mongodb.net/")
   .then(() => {
@@ -67,3 +67,4 @@ app.use(cors());
 //     .catch((err) => {
 //         console.error("MongoDB connection error:", err);
 //     });
+
