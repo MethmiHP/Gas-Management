@@ -8,7 +8,7 @@ const app = express();
 
 // Root route
 app.get("/", (req, res) => {
-    res.send("Welcome to the Delivery Management API!");
+    res.send("Welcome to the order Management API!");
   });
 
 
