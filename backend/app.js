@@ -1,69 +1,44 @@
-// Importing required modules
-const express = require("express"); // A web framework for handling HTTP requests and setting up routes
-const mongoose = require("mongoose"); // A library for interacting with MongoDB
-const cors = require("cors"); // Middleware to handle cross-origin resource sharing
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const complaintRoutes = require("./routes/ComplaintRoutes");
 
-// Creating an instance of an express application
 const app = express();
 
-// Root route
-app.get("/", (req, res) => {
-    res.send("Welcome to the Delivery Management API!");
-  });
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use("/api/complaints", complaintRoutes);
 
+// MongoDB Connection
+mongoose.connect("mongodb+srv://admin:sGPUhAWdhvk0TVkY@cluster0.lmqpi.mongodb.net/", {})
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.log(err));
 
-  // Middleware
-app.use(express.json()); // Enables parsing of incoming JSON data in request bodies
-app.use(cors()); 
+// Dynamic port selection
+const startServer = (port) => {
+    try {
+        const server = app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
 
-  mongoose
-  .connect("mongodb+srv://admin:sGPUhAWdhvk0TVkY@cluster0.lmqpi.mongodb.net/")
-  .then(() => {
-    console.log("Connected to MongoDB");
-    app.listen(5000, () => {
-      console.log("Server running on port 5000");
-    });
-  })
-  .catch((err) => console.log("MongoDB connection error:", err));
+        // Handle errors after initial connection
+        server.on('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                console.log(`Port ${port} is busy, trying ${port + 1}...`);
+                server.close();
+                startServer(port + 1);
+            } else {
+                console.error('Server error:', error);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
 
-// Importing required modules
-// require("dotenv").config(); // Load environment variables
-// const express = require("express");
-// const mongoose = require("mongoose");
-// const cors = require("cors");
-
-
-// // Creating an instance of an Express application
-// const app = express();
-
-// // Middleware
-// app.use(express.json()); // Enables parsing of incoming JSON data in request bodies
-// app.use(cors()); // Enable CORS for specific origin
-
-// // Routes
-// app.get("/", (req, res) => {
-//   res.send("Welcome to the Delivery Management API!");
-// });
-
-
-// // Error-handling middleware
-// app.use((err, req, res, next) => {
-//   console.error(err.stack);
-//   res.status(500).json({ message: "Something went wrong!" });
-// });
-
-// // MongoDB connection
-// mongoose
-//     .connect(process.env.MONGODB_URI)
-//     .then(() => {
-//         console.log("Connected to MongoDB");
-
-//         // Start the server after successfully connecting to MongoDB
-//         const PORT = process.env.PORT || 5000; // Use environment variable for port
-//         app.listen(PORT, () => {
-//             console.log('Server running on port ' + PORT);
-//         });
-//     })
-//     .catch((err) => {
-//         console.error("MongoDB connection error:", err);
-//     });
+// Start server with initial port
+const initialPort = process.env.PORT || 5000;
+startServer(initialPort);
