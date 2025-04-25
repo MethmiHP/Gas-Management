@@ -5,13 +5,16 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 // Import ProductPage component for inventory management
 import ProductPage from '../../inventoryManagement/pages/ProductPage';
+// Import PDF libraries
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 // Import icons
 import { 
   FiHome, FiShoppingBag, FiUsers, FiPackage, 
   FiLogOut, FiSettings, FiTruck, FiBell, FiSearch,
   FiPlus, FiChevronDown, FiMenu, FiX, FiMessageSquare,
   FiFilter, FiRefreshCw, FiEye, FiEdit, FiTrash2,
-  FiMap, FiList
+  FiMap, FiList, FiFileText
 } from 'react-icons/fi';
 
 const AdminDashboard = () => {
@@ -107,7 +110,7 @@ const AdminDashboard = () => {
       setOrdersLoading(true);
       setOrderError(null);
       
-      // Update the endpoint to include the /api prefix
+      // Use the correct endpoint with /api prefix
       const response = await axios.get('http://localhost:5000/api/orders');
       
       if (response.data && response.data.success) {
@@ -341,6 +344,72 @@ const AdminDashboard = () => {
   // Handle sidebar navigation for deliveries
   const navigateToDeliveries = () => {
     navigate('/view-all-deliveries');
+  };
+
+  // Add PDF generation function for orders
+  const handleGeneratePDF = (order) => {
+    const doc = new jsPDF();
+    
+    // Add Nelson Enterprises header
+    doc.setFontSize(22);
+    doc.setTextColor(0, 51, 102); // Dark blue color
+    doc.text("Nelson Enterprises", 105, 20, { align: "center" });
+    
+    doc.setFontSize(16);
+    doc.text("Order Details", 105, 30, { align: "center" });
+    
+    // Add order metadata
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Order ID: #${order.orderId}`, 20, 50);
+    doc.text(`Date: ${new Date(order.createdAt || Date.now()).toLocaleDateString()}`, 20, 60);
+    doc.text(`Customer: ${order.userName}`, 20, 70);
+    doc.text(`Type: ${order.orderType}`, 20, 80);
+    doc.text(`Payment Method: ${order.paymentMethod}`, 20, 90);
+    doc.text(`Payment Status: ${order.paymentStatus}`, 20, 100);
+    doc.text(`Amount: $${order.amount ? order.amount.toFixed(2) : '0.00'}`, 20, 110);
+    
+    // Add company footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Nelson Enterprises - Gas Management System", 105, pageHeight - 10, { align: "center" });
+    
+    // Generate and save the PDF
+    doc.save(`Order_${order.orderId}.pdf`);
+    toast.success('PDF generated successfully');
+  };
+
+  // Add PDF generation function for users
+  const handleGenerateUserPDF = (user) => {
+    const doc = new jsPDF();
+    
+    // Add Nelson Enterprises header
+    doc.setFontSize(22);
+    doc.setTextColor(0, 51, 102); // Dark blue color
+    doc.text("Nelson Enterprises", 105, 20, { align: "center" });
+    
+    doc.setFontSize(16);
+    doc.text("User Details", 105, 30, { align: "center" });
+    
+    // Add user metadata
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`User ID: #${user._id}`, 20, 50);
+    doc.text(`Username: ${user.username}`, 20, 60);
+    doc.text(`Email: ${user.email}`, 20, 70);
+    doc.text(`Role: ${user.role}`, 20, 80);
+    doc.text(`Created: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}`, 20, 90);
+    
+    // Add company footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Nelson Enterprises - Gas Management System", 105, pageHeight - 10, { align: "center" });
+    
+    // Generate and save the PDF
+    doc.save(`User_${user.username}.pdf`);
+    toast.success('User PDF generated successfully');
   };
 
   const renderDashboardContent = () => {
@@ -637,16 +706,6 @@ const AdminDashboard = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleViewOrder(order.orderId);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 p-1"
-                      title="View details"
-                    >
-                      <FiEye size={18} />
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
                         handleEditOrder(order.orderId);
                       }}
                       className="text-amber-600 hover:text-amber-900 p-1"
@@ -664,6 +723,16 @@ const AdminDashboard = () => {
                     >
                       <FiTrash2 size={18} />
                     </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGeneratePDF(order);
+                      }}
+                      className="text-gray-600 hover:text-gray-900 p-1"
+                      title="Generate PDF"
+                    >
+                      <FiFileText size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -679,7 +748,6 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-semibold mb-4">
               {editingOrderId ? 'Edit Order' : 'Add New Order'}
             </h2>
-            
             <form onSubmit={handleOrderSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
@@ -691,7 +759,6 @@ const AdminDashboard = () => {
                   required
                 />
               </div>
-              
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
                 <input
@@ -895,6 +962,17 @@ const AdminDashboard = () => {
                     >
                       <FiTrash2 size={18} />
                     </button>
+                    {/* Add PDF generation button */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGenerateUserPDF(user);
+                      }}
+                      className="text-gray-600 hover:text-gray-900 p-1"
+                      title="Generate PDF"
+                    >
+                      <FiFileText size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -910,7 +988,6 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-semibold mb-4">
               {editingUser ? 'Edit User' : 'Add New User'}
             </h2>
-            
             <form onSubmit={handleUserSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
@@ -922,7 +999,6 @@ const AdminDashboard = () => {
                   required
                 />
               </div>
-              
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
@@ -1087,7 +1163,6 @@ const AdminDashboard = () => {
             </li>
           </ul>
         </div>
-        
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
@@ -1100,28 +1175,18 @@ const AdminDashboard = () => {
       </div>
       
       {/* Mobile sidebar and header omitted for brevity - similar to CustomerDashboard */}
-      
-      {/* Main content area */}
+
       <div className="flex-1">
         {/* Top Navigation */}
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <div className="flex items-center lg:hidden">
-                <button
-                  onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                >
-                  <FiMenu size={24} />
-                </button>
-                <h1 className="ml-4 text-lg font-semibold text-gray-800">
-                  {activeTab === 'dashboard' && 'Admin Dashboard'}
-                  {activeTab === 'orders' && 'Order Management'}
-                  {activeTab === 'users' && 'User Management'}
-                  {activeTab === 'inventory' && 'Inventory Management'}
-                </h1>
-              </div>
-              
+              <button 
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+              >
+                <FiMenu size={24} />
+              </button>
               <div className="hidden lg:flex items-center">
                 <h1 className="text-xl font-semibold text-gray-800">
                   {activeTab === 'dashboard' && 'Admin Dashboard'}
@@ -1130,7 +1195,6 @@ const AdminDashboard = () => {
                   {activeTab === 'inventory' && 'Inventory Management'}
                 </h1>
               </div>
-              
               {/* Profile section similar to CustomerDashboard */}
             </div>
           </div>

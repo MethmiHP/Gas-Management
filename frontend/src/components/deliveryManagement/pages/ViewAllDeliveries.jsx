@@ -4,8 +4,10 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { 
   FiSearch, FiFilter, FiPlus, FiRefreshCw, FiEdit, 
-  FiTrash2, FiEye, FiTruck, FiChevronLeft, FiArrowDown, FiArrowUp 
+  FiTrash2, FiEye, FiTruck, FiChevronLeft, FiArrowDown, FiArrowUp, FiFileText 
 } from 'react-icons/fi';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ViewAllDeliveries = () => {
   const navigate = useNavigate();
@@ -111,6 +113,77 @@ const ViewAllDeliveries = () => {
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error(error.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  // Add PDF generation function for deliveries
+  const handleGenerateDeliveryPDF = (delivery) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add Nelson Enterprises header
+      doc.setFontSize(22);
+      doc.setTextColor(0, 51, 102); // Dark blue color
+      doc.text("Nelson Enterprises", 105, 20, { align: "center" });
+      
+      doc.setFontSize(16);
+      doc.text("Delivery Details", 105, 30, { align: "center" });
+      
+      // Add delivery metadata
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Order ID: #${delivery.orderId}`, 20, 50);
+      doc.text(`Date: ${new Date(delivery.deliveryDate || Date.now()).toLocaleDateString()}`, 20, 60);
+      doc.text(`Customer: ${delivery.customerName}`, 20, 70);
+      doc.text(`Address: ${delivery.address}`, 20, 80);
+      doc.text(`Phone: ${delivery.phone}`, 20, 90);
+      doc.text(`Status: ${delivery.deliveryStatus}`, 20, 100);
+      doc.text(`Payment Method: ${delivery.paymentMethod}`, 20, 110);
+      
+      // Add payment information if it's Cash On Delivery
+      if (delivery.paymentMethod === 'Cash On Delivery') {
+        const paymentStatus = delivery.codPaid ? `Paid (${delivery.amountReceived})` : 'Pending';
+        doc.text(`Payment Status: ${paymentStatus}`, 20, 120);
+      }
+      
+      // Add driver information if available
+      if (delivery.driver) {
+        doc.text(`Driver: ${delivery.driver.name || 'Assigned'}`, 20, 130);
+      } else {
+        doc.text(`Driver: Not Assigned`, 20, 130);
+      }
+      
+      // Add delivery tracking information if available
+      if (delivery.trackingHistory && delivery.trackingHistory.length > 0) {
+        doc.setFontSize(14);
+        doc.text("Tracking History", 105, 150, { align: "center" });
+        
+        const trackingData = delivery.trackingHistory.map(entry => [
+          new Date(entry.date).toLocaleDateString(), 
+          entry.description
+        ]);
+        
+        autoTable(doc, {
+          startY: 155,
+          head: [['Date', 'Status Update']],
+          body: trackingData,
+          theme: 'striped',
+          headStyles: { fillColor: [0, 51, 102] }
+        });
+      }
+      
+      // Add company footer
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Nelson Enterprises - Gas Management System", 105, pageHeight - 10, { align: "center" });
+      
+      // Generate and save the PDF
+      doc.save(`Delivery_${delivery.orderId}.pdf`);
+      toast.success('Delivery PDF generated successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
     }
   };
 
@@ -401,6 +474,17 @@ const ViewAllDeliveries = () => {
                               </button>
                             </>
                           )}
+                          {/* Add PDF generation button */}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleGenerateDeliveryPDF(delivery);
+                            }}
+                            className="text-gray-600 hover:text-gray-900"
+                            title="Generate PDF"
+                          >
+                            <FiFileText size={18} />
+                          </button>
                         </td>
                       </tr>
                     ))}

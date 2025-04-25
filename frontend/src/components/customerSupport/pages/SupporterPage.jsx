@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ComplaintService } from '../services/complaint.services'; // Adjust the path as needed
-import { FaCheck, FaTrash, FaEdit } from 'react-icons/fa';
+import { FaCheck, FaTrash, FaEdit, FaFilePdf } from 'react-icons/fa';
 import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const SupporterPage = () => {
   const [complaints, setComplaints] = useState([]);
@@ -102,6 +104,63 @@ const SupporterPage = () => {
     }
   };
 
+  const handleGenerateComplaintPDF = (complaint) => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add Nelson Enterprises header
+      doc.setFontSize(22);
+      doc.setTextColor(0, 51, 102); // Dark blue color
+      doc.text("Nelson Enterprises", 105, 20, { align: "center" });
+      
+      doc.setFontSize(16);
+      doc.text("Complaint Details", 105, 30, { align: "center" });
+      
+      // Add complaint metadata
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Complaint ID: #${complaint.complaintID}`, 20, 50);
+      doc.text(`Date: ${formatDate(complaint.createdAt)}`, 20, 60);
+      doc.text(`Customer: ${complaint.customerName}`, 20, 70);
+      doc.text(`Email: ${complaint.customerEmail}`, 20, 80);
+      doc.text(`Phone: ${complaint.customerPhone}`, 20, 90);
+      doc.text(`Status: ${complaint.status}`, 20, 100);
+      
+      // Add complaint content with word wrap
+      doc.setFontSize(14);
+      doc.text("Complaint Description:", 20, 120);
+      
+      const splitComplaint = doc.splitTextToSize(complaint.complain, 170);
+      doc.setFontSize(11);
+      doc.text(splitComplaint, 20, 130);
+      
+      // Add reply if available
+      const yPos = 130 + (splitComplaint.length * 7);
+      
+      if (complaint.reply) {
+        doc.setFontSize(14);
+        doc.text("Reply:", 20, yPos);
+        
+        const splitReply = doc.splitTextToSize(complaint.reply, 170);
+        doc.setFontSize(11);
+        doc.text(splitReply, 20, yPos + 10);
+      }
+      
+      // Add company footer
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("Nelson Enterprises - Gas Management System", 105, pageHeight - 10, { align: "center" });
+      
+      // Generate and save the PDF
+      doc.save(`Complaint_${complaint.complaintID}.pdf`);
+      alert('Complaint PDF generated successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF');
+    }
+  };
+
   if (loading) return <div className="text-center p-8">Loading complaints...</div>;
   if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
 
@@ -173,6 +232,16 @@ const SupporterPage = () => {
                         title="Delete"
                       >
                         <FaTrash className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateComplaintPDF(complaint);
+                        }}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Generate PDF"
+                      >
+                        <FaFilePdf className="w-5 h-5" />
                       </button>
                     </div>
                   </td>

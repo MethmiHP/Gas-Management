@@ -14,6 +14,7 @@ const deliveryRoutes = require("./routes/deliveryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const complaintRoutes = require("./routes/ComplaintRoutes");
 const authRoutes = require("./routes/authRoutes");
+const orderRoutes = require("./routes/orderRoute"); // Import order routes
 
 // Creating an instance of an express application
 const app = express();
@@ -34,6 +35,7 @@ app.use("/deliveries", deliveryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/orders", orderRoutes); // Add order routes with /api prefix
 
 // Connecting to MongoDB
 mongoose

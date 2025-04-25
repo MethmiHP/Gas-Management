@@ -8,7 +8,7 @@ import './App.css'
 import Delivery from './components/deliveryManagement/pages/DeliveryPage'
 import Driver from './components/deliveryManagement/pages/DriverPage'
 import AddDriver from './components/deliveryManagement/pages/AddDriver'
-import DeliveryDashboardPage from './components/deliveryManagement/pages/DashboardPage'
+import DashboardPage from './components/deliveryManagement/pages/DashboardPage'
 import Layout from './components/deliveryManagement/pages/Layout'
 import Driverperformance from './components/deliveryManagement/pages/DeliveryPerformanceReport'
 import DeliveryDetails from './components/deliveryManagement/pages/DeliveryDetails'
@@ -33,6 +33,7 @@ import ProductsPage from './components/productDisplay/ProductsPage';
 import PaymentPage from './components/orderManagement/PaymentPage'; // Add this import
 import ViewAllDeliveries from './components/deliveryManagement/pages/ViewAllDeliveries'; // Add this import
 
+
 function App() {
   const [count, setCount] = useState(0)
 
@@ -50,7 +51,8 @@ function App() {
           <Route path="/cart" element={<CartController />} />
           <Route path="/delivery-form" element={<DeliveryForm />} /> {/* Add this line */}
           <Route path="/payment" element={<PaymentPage />} /> {/* Add this line */}
-          
+          <Route path="/view-all-deliveries" element={<ViewAllDeliveries />} /> {/* Add this line */}
+         
           
           {/* User management routes outside of Layout */}
           <Route path="/customer/dashboard" element={<CustomerDashboard />} />
@@ -63,7 +65,7 @@ function App() {
           <Route path="/*" element={
             <Layout>
               <Routes>
-                <Route path="deliverydashboard" element={<DeliveryDashboardPage />} />
+                <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="driver-layout" element={<Driverlayout />} />
                 <Route path="deliveries" element={<Delivery />} />
                 <Route path="driver-performance-report" element={<Driverperformance />} />
@@ -81,7 +83,15 @@ function App() {
                 <Route path="add-delivery" element={<DeliveryForm />} />
                 <Route path="home" element={<Home />} />
                 <Route path="payment" element={<PaymentPage />} /> {/* Add this inside layout as well */}
-                <Route path="/view-all-deliveries" element={<ViewAllDeliveries />} /> {/* Add this line */}
+             
+
+
+
+
+        
+       
+        
+
               </Routes>
             </Layout>
           } />

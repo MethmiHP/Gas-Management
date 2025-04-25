@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ProductService } from '../services/product.services';
-import { FiPlus, FiEdit, FiTrash2, FiRefreshCw, FiPackage } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiRefreshCw, FiPackage, FiFileText } from 'react-icons/fi';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { toast } from 'react-toastify';
 
 const ProductPage = () => {
     // Form state
@@ -251,6 +254,79 @@ const ProductPage = () => {
       } catch (error) {
         setError(error.message);
         setLoading(false);
+      }
+    };
+
+    // Handle PDF generation for products
+    const handleGenerateProductPDF = (product) => {
+      try {
+        const doc = new jsPDF();
+        
+        // Add Nelson Enterprises header
+        doc.setFontSize(22);
+        doc.setTextColor(0, 51, 102); // Dark blue color
+        doc.text("Nelson Enterprises", 105, 20, { align: "center" });
+        
+        doc.setFontSize(16);
+        doc.text("Product Details", 105, 30, { align: "center" });
+        
+        // Add product metadata
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Product ID: #${product._id}`, 20, 50);
+        doc.text(`Name: ${product.name}`, 20, 60);
+        doc.text(`Type: ${product.type}`, 20, 70);
+        
+        // Add gas specific information if applicable
+        if (product.type === 'Gas Cylinder') {
+          doc.text(`Gas Type: ${product.gasType || 'N/A'}`, 20, 80);
+          doc.text(`Size: ${product.size || 'N/A'}`, 20, 90);
+          doc.text(`Capacity: ${product.capacity || 'N/A'}`, 20, 100);
+        }
+        
+        doc.text(`Quantity: ${product.quantity}`, 20, 110);
+        doc.text(`Price: $${product.price.toFixed(2)}`, 20, 120);
+        
+        // Add image URL if available
+        if (product.imageUrl) {
+          doc.text(`Image URL: ${product.imageUrl}`, 20, 130);
+        }
+        
+        // Add inventory statistics
+        doc.setFontSize(14);
+        doc.text("Inventory Value", 105, 150, { align: "center" });
+        
+        // Create a table with product value information
+        const tableData = [
+          ['Unit Price', 'Quantity', 'Total Value'],
+          [
+            `$${product.price.toFixed(2)}`, 
+            product.quantity.toString(), 
+            `$${(product.price * product.quantity).toFixed(2)}`
+          ]
+        ];
+        
+        // Use autoTable function directly with doc as first parameter
+        autoTable(doc, {
+          startY: 155,
+          head: [tableData[0]],
+          body: [tableData[1]],
+          theme: 'striped',
+          headStyles: { fillColor: [0, 51, 102] }
+        });
+        
+        // Add company footer
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Nelson Enterprises - Gas Management System", 105, pageHeight - 10, { align: "center" });
+        
+        // Generate and save the PDF
+        doc.save(`Product_${product.name}.pdf`);
+        toast.success('Product PDF generated successfully');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        toast.error('Failed to generate PDF');
       }
     };
     
@@ -523,6 +599,14 @@ const ProductPage = () => {
                           title="Delete product"
                         >
                           <FiTrash2 size={18} />
+                        </button>
+                        {/* Add PDF generation button */}
+                        <button 
+                          onClick={() => handleGenerateProductPDF(product)}
+                          className="text-gray-600 hover:text-gray-900 p-1"
+                          title="Generate PDF"
+                        >
+                          <FiFileText size={18} />
                         </button>
                       </td>
                     </tr>

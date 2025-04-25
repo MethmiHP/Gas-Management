@@ -4,17 +4,6 @@ import { useState } from 'react';
 import { ShoppingCart, User, ChevronDown, Menu, X, Instagram, Facebook, Twitter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserService } from '../../userManagement/services/userService';
-import logo from '../../../assets/logo.jpg';
-import img1 from '../../../assets/1.jpg';
-import img2 from '../../../assets/2.jpg';
-import img3 from '../../../assets/3.jpg';
-import img4 from '../../../assets/4.jpg';
-import img5 from '../../../assets/5.jpg';
-import img6 from '../../../assets/6.jpg';
-import img7 from '../../../assets/7.jpg';
-import img8 from '../../../assets/8.jpg';
-import img9 from '../../../assets/9.jpg';
-import acc from '../../../assets/acc.jpg';
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,7 +50,7 @@ export default function HomePage() {
               </div>
               
               <Link to="/about" className="hover:text-blue-300 transition duration-300">About Us</Link>
-              <Link to="/contact" className="hover:text-blue-300 transition duration-300">Contact</Link>
+              <a href="https://wa.me/+94742826688" target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition duration-300">Contact</a>
               <Link to="/products" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600">
                 Products
               </Link>
@@ -117,8 +106,8 @@ export default function HomePage() {
               </div>
               
               <Link to="/about" className="py-2 block hover:bg-blue-700 px-3 rounded">About Us</Link>
-              <Link to="/contact" className="py-2 block hover:bg-blue-700 px-3 rounded">Contact</Link>
-              <Link to="/cart" className="py-2 block hover:bg-blue-700 px-3 rounded flex items-center">
+              <a href="https://wa.me/+94742826688" target="_blank" rel="noopener noreferrer" className="py-2 block hover:bg-blue-700 px-3 rounded">Contact</a>
+              <Link to="/cart" className="py-2 block hover:bg-blue-700 px-3 rounded flex ite</a>ms-center">
                 <ShoppingCart className="h-5 w-5 mr-2" /> Cart
               </Link>
               {isLoggedIn ? (
@@ -154,7 +143,7 @@ export default function HomePage() {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <div className="bg-blue-700 rounded-lg p-6 w-full max-w-md h-64 flex items-center justify-center">
-                <p className="text-center text-lg"><img src={img3} alt="logo" classname="w-110 h-60"/></p>
+                <p className="text-center text-lg">Gas Cylinder Image Placeholder</p>
               </div>
             </div>
           </div>
@@ -170,7 +159,7 @@ export default function HomePage() {
             {/* Gas Category */}
             <div className="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
               <div className="bg-blue-600 h-48 flex items-center justify-center">
-                <p className="text-white text-lg"><img src={img1} alt="gas" classname="w-95 h-49"/></p>
+                <p className="text-white text-lg">Gas Cylinders Image</p>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-3">Industrial Gases</h3>
@@ -182,7 +171,7 @@ export default function HomePage() {
             {/* Accessories Category */}
             <div className="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
               <div className="bg-blue-700 h-48 flex items-center justify-center">
-                <p className="text-white text-lg"><img src={acc} alt="accessories" classname="w-95 h-40"/></p>
+                <p className="text-white text-lg">Accessories Image</p>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-3">Gas Accessories</h3>
@@ -194,7 +183,7 @@ export default function HomePage() {
             {/* Services */}
             <div className="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
               <div className="bg-blue-800 h-48 flex items-center justify-center">
-                <p className="text-white text-lg"><img src={img9} alt="img9" classname="w-95 h-49"/></p>
+                <p className="text-white text-lg">Services Image</p>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-3">Technical Services</h3>
@@ -224,7 +213,7 @@ export default function HomePage() {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <div className="bg-gray-200 rounded-lg p-6 w-full max-w-md h-64 flex items-center justify-center">
-                <p className="text-center text-gray-600"><img src={img8} alt="company" classname="w-102 h-55"/></p>
+                <p className="text-center text-gray-600">Company Image Placeholder</p>
               </div>
             </div>
           </div>
