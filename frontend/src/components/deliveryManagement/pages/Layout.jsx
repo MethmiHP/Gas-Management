@@ -1,108 +1,3 @@
-// import React from 'react';
-// import { Link, useLocation } from 'react-router-dom';
-
-// const Layout = ({ children }) => {
-//   const location = useLocation();
-  
-//   // Check which path is active
-//   const isActive = (path) => {
-//     return location.pathname === path ? 
-//       'bg-blue-700 text-white' : 
-//       'text-blue-100 hover:bg-blue-600 hover:text-white';
-//   };
-
-//   return (
-//     <div className="flex h-screen bg-gray-100">
-//       {/* Sidebar */}
-//       <div className="w-64 bg-blue-800 text-white flex flex-col">
-//         <div className="p-4 border-b border-blue-700">
-//           <h1 className="text-2xl font-bold">Gas Management</h1>
-//           <p className="text-sm text-blue-200">Delivery System</p>
-//         </div>
-        
-//         <nav className="flex-1 p-4">
-//           <ul className="space-y-2">
-//             <li>
-//               <Link 
-//                 to="/" 
-//                 className={`block px-4 py-2 rounded-md transition ${isActive('/')}`}
-//               >
-//                 Dashboard
-//               </Link>
-//             </li>
-//             <li>
-//               <Link 
-//                 to="/deliveries" 
-//                 className={`block px-4 py-2 rounded-md transition ${isActive('/deliveries')}`}
-//               >
-//                 Deliveries
-//               </Link>
-//             </li>
-//             <li>
-//               <Link 
-//                 to="/drivers" 
-//                 className={`block px-4 py-2 rounded-md transition ${isActive('/drivers')}`}
-//               >
-//                 Drivers
-//               </Link>
-//             </li>
-//             <li>
-//               <Link 
-//                 to="/driver-performance-report" 
-//                 className={`block px-4 py-2 rounded-md transition ${isActive('/driver-performance-report')}`}
-//               >
-//                 Driver Performance Report
-//               </Link>
-//             </li>
-//           </ul>
-//         </nav>
-        
-//         <div className="p-4 border-t border-blue-700">
-//           <p className="text-sm text-blue-300">
-//             © {new Date().getFullYear()} Gas Management
-//           </p>
-//         </div>
-//       </div>
-      
-//       {/* Main Content */}
-//       <div className="flex-1 overflow-auto">
-//         <header className="bg-white shadow-sm">
-//           <div className="px-4 py-3 flex justify-between items-center">
-//             <h2 className="text-xl font-semibold text-gray-800">
-//               {location.pathname === '/' && 'Dashboard'}
-//               {location.pathname === '/deliveries' && 'Deliveries Management'}
-//               {location.pathname === '/drivers' && 'Drivers Management'}
-//             </h2>
-            
-//             <div className="flex items-center space-x-4">
-//               <div className="relative">
-//                 <input
-//                   type="text"
-//                   placeholder="Search..."
-//                   className="px-4 py-1 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-//                 />
-//               </div>
-              
-//               <div className="flex items-center space-x-2">
-//                 <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">Admin</span>
-//                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-//                   A
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </header>
-        
-//         <main className="p-6">
-//           {children}
-//         </main>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Layout;
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -117,7 +12,8 @@ import {
   Menu, 
   X, 
   ChevronDown,
-  BarChart3
+  BarChart3,
+  Package
 } from 'lucide-react';
 
 const Layout = ({ children }) => {
@@ -213,6 +109,14 @@ const Layout = ({ children }) => {
             >
               <BarChart3 className="mr-3 h-5 w-5" />
               Performance Reports
+            </Link>
+            
+            <Link
+              to="/inventory"
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200 ${isActive('/inventory')}`}
+            >
+              <Package className="mr-3 h-5 w-5" />
+              Inventory
             </Link>
             
             <div className="border-t border-blue-700 my-2"></div>

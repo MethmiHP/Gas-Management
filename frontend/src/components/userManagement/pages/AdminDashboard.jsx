@@ -16,6 +16,8 @@ import {
   FiFilter, FiRefreshCw, FiEye, FiEdit, FiTrash2,
   FiMap, FiList, FiFileText
 } from 'react-icons/fi';
+// Import AdminProductManagement component for advanced inventory management
+import AdminProductManagement from '../../inventoryManagement/pages/AdminProductManagement';
 
 const AdminDashboard = () => {
   const [adminData, setAdminData] = useState({
@@ -346,6 +348,11 @@ const AdminDashboard = () => {
     navigate('/view-all-deliveries');
   };
 
+  // Handle navigation to Admin Product Management
+  const navigateToProductManagement = () => {
+    setActiveTab('products');
+  };
+
   // Add PDF generation function for orders
   const handleGeneratePDF = (order) => {
     const doc = new jsPDF();
@@ -422,7 +429,10 @@ const AdminDashboard = () => {
         return renderUsersTab();
       case 'inventory':
         // Return the ProductPage component for inventory management
-        return <ProductPage />;
+        return <AdminProductManagement />;
+      case 'products':
+        // Return the AdminProductManagement component for product management
+        return <AdminProductManagement />;
       default:
         return renderDashboardTab();
     }
@@ -518,11 +528,16 @@ const AdminDashboard = () => {
           </button>
           <button 
             onClick={() => setActiveTab('inventory')}
-            className="bg-amber-50 hover:bg-amber-100 p-4 rounded-lg flex flex-col items-center justify-center text-amber-600 transition-colors"
+            className={`flex items-center w-full p-3 rounded-lg text-sm ${
+              activeTab === 'inventory' 
+                ? 'bg-blue-600 text-white' 
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
           >
-            <FiPackage size={24} />
-            <span className="mt-2 text-sm font-medium">Inventory</span>
+            <FiPackage size={20} className={activeTab === 'inventory' ? '' : 'text-gray-500'} />
+            <span className="ml-3 font-medium">Inventory</span>
           </button>
+       
           {/* Add View All Deliveries Button */}
           <button
             onClick={handleViewAllDeliveries}
@@ -1142,6 +1157,7 @@ const AdminDashboard = () => {
                 <span className="ml-3 font-medium">Inventory</span>
               </button>
             </li>
+            
             {/* Add Deliveries Menu Item */}
             <li>
               <button

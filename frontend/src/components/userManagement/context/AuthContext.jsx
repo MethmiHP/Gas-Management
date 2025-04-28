@@ -18,6 +18,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Check authentication status on mount
@@ -31,18 +32,25 @@ export const AuthProvider = ({ children }) => {
           if (userData && userData.success) {
             setIsAuthenticated(true);
             setUserRole(UserService.getUserRole());
+            
+            // Set user data from localStorage
+            const savedUser = JSON.parse(localStorage.getItem('user'));
+            setUser(savedUser);
           } else {
             // If API call fails, token is likely invalid
             UserService.logout();
             setIsAuthenticated(false);
             setUserRole(null);
+            setUser(null);
           }
         } else {
           setIsAuthenticated(false);
+          setUser(null);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
         setIsAuthenticated(false);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -57,6 +65,11 @@ export const AuthProvider = ({ children }) => {
       const result = await UserService.login(email, password);
       setIsAuthenticated(true);
       setUserRole(UserService.getUserRole());
+      
+      // Set user data from result or localStorage
+      const userData = result.user || JSON.parse(localStorage.getItem('user'));
+      setUser(userData);
+      
       return result;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Login failed';
@@ -70,6 +83,7 @@ export const AuthProvider = ({ children }) => {
     UserService.logout();
     setIsAuthenticated(false);
     setUserRole(null);
+    setUser(null);
     toast.info('You have been logged out');
   };
 
@@ -79,6 +93,11 @@ export const AuthProvider = ({ children }) => {
       const result = await UserService.register(userData);
       setIsAuthenticated(true);
       setUserRole(userData.role || 'customer');
+      
+      // Set user data from result or localStorage
+      const savedUser = result.user || JSON.parse(localStorage.getItem('user'));
+      setUser(savedUser);
+      
       return result;
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Registration failed';
@@ -91,6 +110,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     isAuthenticated,
     userRole,
+    user,
     loading,
     login,
     logout,

@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "chart.js": "^4.4.9",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "chartjs-to-image": "^1.2.2"
+  }
+}

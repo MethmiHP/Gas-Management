@@ -3,14 +3,13 @@ const Product = require('../models/productModels');
 // Get all products with optional filtering
 exports.getAllProducts = async (req, res) => {
   try {
-    const { type, gasType, size, capacity, price } = req.query;
+    const { type, gasType, size, price } = req.query;
     const filter = {};
 
     // Apply filters if provided
     if (type) filter.type = type;
     if (gasType) filter.gasType = gasType;
     if (size) filter.size = size;
-    if (capacity) filter.capacity = capacity;
     if (price) filter.price = price;
 
     const products = await Product.find(filter);
@@ -179,56 +178,6 @@ exports.updateQuantity = async (req, res) => {
   }
 };
 
-// Update cylinder capacity (Filled/Empty)
-exports.updateCapacity = async (req, res) => {
-  try {
-    const { capacity } = req.body;
-    
-    if (!capacity) {
-      return res.status(400).json({
-        success: false,
-        error: 'Capacity is required'
-      });
-    }
-
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        error: 'Product not found'
-      });
-    }
-
-    if (product.type !== 'Gas Cylinder') {
-      return res.status(400).json({
-        success: false,
-        error: 'Capacity can only be updated for gas cylinders'
-      });
-    }
-
-    if (!['Filled', 'Empty'].includes(capacity)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Capacity must be either "Filled" or "Empty" for gas cylinders'
-      });
-    }
-
-    product.capacity = capacity;
-    await product.save();
-
-    res.status(200).json({
-      success: true,
-      data: product
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-};
-
 // Get inventory statistics
 exports.getInventoryStats = async (req, res) => {
   try {
@@ -243,12 +192,6 @@ exports.getInventoryStats = async (req, res) => {
       { $group: { _id: '$gasType', count: { $sum: 1 }, totalQuantity: { $sum: '$quantity' } } }
     ]);
 
-    // Count gas cylinders by capacity
-    const capacityStats = await Product.aggregate([
-      { $match: { type: 'Gas Cylinder' } },
-      { $group: { _id: '$capacity', count: { $sum: 1 }, totalQuantity: { $sum: '$quantity' } } }
-    ]);
-
     // Count LPG cylinders by size
     const sizeStats = await Product.aggregate([
       { $match: { gasType: 'LPG' } },
@@ -260,8 +203,38 @@ exports.getInventoryStats = async (req, res) => {
       data: {
         byType: typeStats,
         byGasType: gasTypeStats,
-        byCapacity: capacityStats,
         bySize: sizeStats
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// Get low inventory products (products below threshold)
+exports.getLowInventory = async (req, res) => {
+  try {
+    const { threshold = 10 } = req.query; // Default threshold is 10
+    
+    // Find products with quantity below the threshold
+    const lowStockProducts = await Product.find({ 
+      quantity: { $lte: parseInt(threshold, 10) } 
+    }).sort({ quantity: 1 });
+    
+    // Separate gas cylinders and accessories
+    const lowStockGasCylinders = lowStockProducts.filter(product => product.type === 'Gas Cylinder');
+    const lowStockAccessories = lowStockProducts.filter(product => product.type === 'Accessory');
+    
+    res.status(200).json({
+      success: true,
+      count: lowStockProducts.length,
+      data: {
+        all: lowStockProducts,
+        gasCylinders: lowStockGasCylinders,
+        accessories: lowStockAccessories
       }
     });
   } catch (error) {
@@ -320,13 +293,6 @@ exports.updateImageUrl = async (req, res) => {
   try {
     const { imageUrl } = req.body;
     
-    if (imageUrl === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Image URL is required'
-      });
-    }
-
     const product = await Product.findById(req.params.id);
 
     if (!product) {

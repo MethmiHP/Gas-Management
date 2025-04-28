@@ -17,9 +17,9 @@ router
 
 // Specialized routes
 router.patch('/:id/quantity', productController.updateQuantity);
-router.patch('/:id/capacity', productController.updateCapacity);
 router.patch('/:id/price', productController.updatePrice);
 router.patch('/:id/image', productController.updateImageUrl);
 router.get('/stats/inventory', productController.getInventoryStats);
+router.get('/stats/low-inventory', productController.getLowInventory);
 
 module.exports = router;

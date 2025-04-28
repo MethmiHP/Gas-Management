@@ -43,20 +43,6 @@ const productSchema = new mongoose.Schema({
       message: 'Size is required for LPG gas cylinders and must be one of the valid sizes'
     }
   },
-  capacity: {
-    type: String,
-    required: [true, 'Capacity is required'],
-    validate: {
-      validator: function(value) {
-        if (this.type === 'Gas Cylinder') {
-          return ['Filled', 'Empty'].includes(value);
-        } else {
-          return value === 'N/A';
-        }
-      },
-      message: 'Capacity must be "Filled" or "Empty" for gas cylinders, and "N/A" for accessories'
-    }
-  },
   quantity: {
     type: Number,
     required: [true, 'Quantity is required'],
@@ -84,12 +70,11 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Add a pre-save hook to set default capacity for accessories
+// Add a pre-save hook to set defaults for accessories
 productSchema.pre('save', function(next) {
   if (this.type === 'Accessory') {
     this.gasType = null;
     this.size = null;
-    this.capacity = 'N/A';
   }
   next();
 });

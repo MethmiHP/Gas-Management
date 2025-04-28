@@ -18,6 +18,7 @@ import DeliveryForm from './components/deliveryManagement/pages/DeliveryForm';
 import Home from './components/deliveryManagement/pages/Home'
 import Driverlayout from './components/deliveryManagement/pages/Driver_layout'
 import ProductPage from './components/inventoryManagement/pages/ProductPage'
+import AdminProductManagement from './components/inventoryManagement/pages/AdminProductManagement'
 import ComplaintPage from "./components/customerSupport/pages/ComplaintPage";
 import SupporterPage from "./components/customerSupport/pages/SupporterPage";
 import OrderController from './components/orderManagement/OrderController'
@@ -79,14 +80,36 @@ function App() {
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/driver/dashboard" element={<DriverDashboard />} /> {/* Add this line */}
+            <Route path="/admin/dashboard/inventory" element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminProductManagement />
+              </ProtectedRoute>
+            } />
             <Route path="/profile" element={<EditProfile />} />
             <Route path="/change-password" element={<ChangePassword />} />
+            
+            {/* Admin routes with role protection */}
+            <Route path="/admin/products" element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminProductManagement />
+              </ProtectedRoute>
+            } />
             
             {/* All other routes within the layout */}
             <Route path="/*" element={
               <Layout>
                 <Routes>
                   <Route path="dashboard" element={<DashboardPage />} />
+                  <Route path="admin/products" element={
+                    <ProtectedRoute roles={['admin']}>
+                      <AdminProductManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="inventory" element={
+                    <ProtectedRoute>
+                      <AdminProductManagement />
+                    </ProtectedRoute>
+                  } />
                   <Route path="driver-layout" element={<Driverlayout />} />
                   <Route path="deliveries" element={<Delivery />} />
                   <Route path="driver-performance-report" element={<Driverperformance />} />

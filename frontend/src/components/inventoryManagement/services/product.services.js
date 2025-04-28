@@ -243,6 +243,74 @@ export const ProductService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Get inventory statistics
+   * @returns {Promise} - The API response
+   */
+  getInventoryStats: async () => {
+    try {
+      const response = await fetch(API_CONFIG.getUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS}/stats/inventory`));
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch inventory statistics');
+      }
+      
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get low inventory products
+   * @param {number} threshold - The threshold for low inventory (default: 10)
+   * @returns {Promise} - The API response
+   */
+  getLowInventory: async (threshold = 10) => {
+    try {
+      const response = await fetch(API_CONFIG.getUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS}/stats/low-inventory?threshold=${threshold}`));
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch low inventory products');
+      }
+      
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Bulk update product quantities
+   * @param {Array} updates - Array of {id, quantity} objects
+   * @returns {Promise} - The API response
+   */
+  bulkUpdateQuantity: async (updates) => {
+    try {
+      const promises = updates.map(update => 
+        ProductService.updateQuantity(update.id, { quantity: update.quantity })
+      );
+      
+      const results = await Promise.allSettled(promises);
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      return {
+        success: true,
+        data: {
+          successful,
+          failed,
+          total: updates.length
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

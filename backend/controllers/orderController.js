@@ -1,5 +1,6 @@
 // controllers/orderController.js
 const Order = require('../models/orderModel');
+const Product = require('../models/productModels'); // Import Product model
 
 // Controller functions
 const OrderController = {
@@ -124,6 +125,32 @@ const OrderController = {
       });
       
       console.log('Order created successfully:', newOrder);
+      
+      // Update product quantities based on order items
+      if (items && items.length > 0) {
+        try {
+          for (const item of items) {
+            const product = await Product.findById(item.productId);
+            
+            if (product) {
+              // Calculate new quantity (ensure it doesn't go below 0)
+              const newQuantity = Math.max(0, product.quantity - item.quantity);
+              
+              // Update product quantity
+              product.quantity = newQuantity;
+              await product.save();
+              
+              console.log(`Updated quantity for product ${product.name}, new quantity: ${newQuantity}`);
+            } else {
+              console.warn(`Product with ID ${item.productId} not found for inventory update`);
+            }
+          }
+        } catch (inventoryError) {
+          console.error('Error updating inventory:', inventoryError);
+          // Continue with the order creation response even if inventory update fails
+          // Consider adding a notification system for failed inventory updates
+        }
+      }
       
       res.status(201).json({
         success: true,
