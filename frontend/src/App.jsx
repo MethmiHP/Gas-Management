@@ -36,6 +36,7 @@ import ViewAllDeliveries from './components/deliveryManagement/pages/ViewAllDeli
 import ProtectedRoute from './components/userManagement/ProtectedRoute';
 import { AuthProvider } from './components/userManagement/context/AuthContext';
 import OrderDetailsPage from './components/orderManagement/OrderDetailsPage'; // Add this import
+import DeliveryProgress from './components/deliveryManagement/pages/DeliveryProgressTracker';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -73,10 +74,12 @@ function App() {
               </ProtectedRoute>
             } />
             
-            <Route path="/view-all-deliveries" element={<ViewAllDeliveries />} /> {/* Add this line */}
+            
             <Route path="/order/:orderId" element={<OrderDetailsPage />} /> {/* Add this line */}
             
             {/* User management routes outside of Layout */}
+            <Route path="/progress" element={<DeliveryProgress />} /> 
+            <Route path="/track" element={<TrackingOrder />} />
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/driver/dashboard" element={<DriverDashboard />} /> {/* Add this line */}
@@ -110,12 +113,14 @@ function App() {
                       <AdminProductManagement />
                     </ProtectedRoute>
                   } />
+
+                   <Route path="/view-all-deliveries" element={<ViewAllDeliveries />} /> {/* Add this line */}
                   <Route path="driver-layout" element={<Driverlayout />} />
                   <Route path="deliveries" element={<Delivery />} />
                   <Route path="driver-performance-report" element={<Driverperformance />} />
                   <Route path="drivers" element={<Driver />} />
                   <Route path="add-driver" element={<AddDriver />} />
-                  <Route path="tracking-order" element={<TrackingOrder />} />
+                  
                   <Route path="delivery/:id" element={<DeliveryDetails />} />
                   <Route path="driver-dashboard" element={< DriverDashboard/>} />
                   <Route path="orders" element={<OrderController />} />

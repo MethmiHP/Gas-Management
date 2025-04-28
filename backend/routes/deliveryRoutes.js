@@ -3,6 +3,9 @@ const express = require("express");
 const router = express.Router();
 const DeliveryController = require("../controllers/deliveryCtrl");
 
+// Route for tracking an order
+router.get("/track", DeliveryController.trackOrder);
+
 // Get driver performance report
 router.get("/performance-report", DeliveryController.getDriverPerformanceReport);
 
@@ -30,7 +33,6 @@ router.put("/:orderId/cod", DeliveryController.handleCODPayment);
 // Delete a delivery
 router.delete("/:id", DeliveryController.deleteDelivery);
 
-// Route for tracking an order
-router.get("/track", DeliveryController.trackOrder);
+
 
 module.exports = router;

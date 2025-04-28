@@ -345,7 +345,7 @@ const AdminDashboard = () => {
 
   // Handle sidebar navigation for deliveries
   const navigateToDeliveries = () => {
-    navigate('/view-all-deliveries');
+    navigate('/dashboard');
   };
 
   // Handle navigation to Admin Product Management
