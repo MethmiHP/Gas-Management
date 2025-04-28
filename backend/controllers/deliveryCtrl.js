@@ -201,56 +201,56 @@ const assignDriver = async (req, res) => {
 //     }
 // };
 
-const updateDeliveryStatus = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { deliveryStatus } = req.body;
+// const updateDeliveryStatus = async (req, res) => {
+//     try {
+//         const { orderId } = req.params;
+//         const { deliveryStatus } = req.body;
 
-        const updatedDelivery = await Delivery.findOneAndUpdate(
-            { orderId },
-            { deliveryStatus },
-            { new: true }
-        );
+//         const updatedDelivery = await Delivery.findOneAndUpdate(
+//             { orderId },
+//             { deliveryStatus },
+//             { new: true }
+//         );
 
-        if (!updatedDelivery) {
-            return res.status(404).json({ message: "Order not found" });
-        }
+//         if (!updatedDelivery) {
+//             return res.status(404).json({ message: "Order not found" });
+//         }
 
-        // If delivered, mark driver as available and increment completed deliveries
-        if (deliveryStatus === "Delivered" && updatedDelivery.driver) {
-            await Driver.findByIdAndUpdate(updatedDelivery.driver, {
-                availability: true,
-                $inc: { completedDeliveries: 1 }, // Increment completedDeliveries by 1
-            });
-        }
+//         // If delivered, mark driver as available and increment completed deliveries
+//         if (deliveryStatus === "Delivered" && updatedDelivery.driver) {
+//             await Driver.findByIdAndUpdate(updatedDelivery.driver, {
+//                 availability: true,
+//                 $inc: { completedDeliveries: 1 }, // Increment completedDeliveries by 1
+//             });
+//         }
 
-        return res.json({ success: true, message: "Order status updated.", delivery: updatedDelivery });
-    } catch (error) {
-        return res.status(500).json({ message: "Error updating order status.", error });
-    }
-};
+//         return res.json({ success: true, message: "Order status updated.", delivery: updatedDelivery });
+//     } catch (error) {
+//         return res.status(500).json({ message: "Error updating order status.", error });
+//     }
+// };
 
-// Handle Cash on Delivery (COD) payment
-const handleCODPayment = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const { amountReceived } = req.body;
+// // Handle Cash on Delivery (COD) payment
+// const handleCODPayment = async (req, res) => {
+//     try {
+//         const { orderId } = req.params;
+//         const { amountReceived } = req.body;
 
-        const updatedDelivery = await Delivery.findOneAndUpdate(
-            { orderId },
-            { codPaid: true, amountReceived },
-            { new: true }
-        );
+//         const updatedDelivery = await Delivery.findOneAndUpdate(
+//             { orderId },
+//             { codPaid: true, amountReceived },
+//             { new: true }
+//         );
 
-        if (!updatedDelivery) {
-            return res.status(404).json({ message: "Order not found" });
-        }
+//         if (!updatedDelivery) {
+//             return res.status(404).json({ message: "Order not found" });
+//         }
 
-        return res.json({ success: true, message: "COD Payment received.", delivery: updatedDelivery });
-    } catch (error) {
-        return res.status(500).json({ message: "Error processing COD payment.", error });
-    }
-};
+//         return res.json({ success: true, message: "COD Payment received.", delivery: updatedDelivery });
+//     } catch (error) {
+//         return res.status(500).json({ message: "Error processing COD payment.", error });
+//     }
+// };
 
 // Delete a delivery
 const deleteDelivery = async (req, res) => {
@@ -405,30 +405,130 @@ const getDriverPerformanceReport = async (req, res) => {
 //   };
 
 // Controller function for tracking an order
+// 
+
 const trackOrder = async (req, res) => {
     try {
         const { orderId, phone } = req.query;
+
+        // Debug what's being received
+        console.log("Track order request:", { orderId, phone });
 
         // Validate that both parameters are provided
         if (!orderId || !phone) {
             return res.status(400).json({ message: "Order ID and phone number are required" });
         }
 
-        // Find the order based on orderId and phone number
-        //const order = await Delivery.findOne({ orderId, phone }).populate("driver");
-        const order = await Delivery.findOne({ orderId: Number(orderId), phone }).populate("driver");
-
+        // Try to find the order with more flexible query
+        let order = null;
+        
+        try {
+            // First try with orderId as string
+            order = await Delivery.findOne({ 
+                orderId: orderId, 
+                phone 
+            }).populate("driver");
+            
+            // If not found, try with orderId as number
+            if (!order && !isNaN(orderId)) {
+                order = await Delivery.findOne({ 
+                    orderId: Number(orderId), 
+                    phone 
+                }).populate("driver");
+            }
+        } catch (queryError) {
+            console.error("Query error:", queryError);
+        }
 
         if (!order) {
             return res.status(404).json({ message: "Order not found!" });
         }
 
+        // Log success
+        console.log("Order found:", order._id);
+        
         res.json({ order });
     } catch (error) {
         console.error("Error tracking order:", error);
-        res.status(500).json({ message: "Server Error", error });
+        res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
+
+const updateDeliveryStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { deliveryStatus, emptyCollected } = req.body;
+
+        // Create an update object with the required fields
+        const updateData = { deliveryStatus };
+        
+        // Only add emptyCollected to the update if it's provided
+        if (emptyCollected !== undefined) {
+            updateData.emptyCollected = emptyCollected;
+        }
+        
+        // Add deliveredAt timestamp if status is Delivered
+        if (deliveryStatus === "Delivered") {
+            updateData.deliveredAt = new Date();
+        }
+
+        const updatedDelivery = await Delivery.findOneAndUpdate(
+            { orderId },
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedDelivery) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // If delivered, mark driver as available and increment completed deliveries
+        if (deliveryStatus === "Delivered" && updatedDelivery.driver) {
+            await Driver.findByIdAndUpdate(updatedDelivery.driver, {
+                availability: true,
+                $inc: { completedDeliveries: 1 },
+            });
+        }
+
+        return res.json({ success: true, message: "Order status updated.", delivery: updatedDelivery });
+    } catch (error) {
+        return res.status(500).json({ message: "Error updating order status.", error });
+    }
+};
+
+const handleCODPayment = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { amountReceived, emptyCollected } = req.body;
+
+        // Create an update object with the required fields
+        const updateData = { 
+            codPaid: true, 
+            amountReceived 
+        };
+        
+        // Only add emptyCollected to the update if it's provided
+        if (emptyCollected !== undefined) {
+            updateData.emptyCollected = emptyCollected;
+        }
+
+        const updatedDelivery = await Delivery.findOneAndUpdate(
+            { orderId },
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedDelivery) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        return res.json({ success: true, message: "COD Payment received.", delivery: updatedDelivery });
+    } catch (error) {
+        return res.status(500).json({ message: "Error processing COD payment.", error });
+    }
+};
+
+
 
 
 

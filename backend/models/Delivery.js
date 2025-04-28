@@ -60,6 +60,12 @@ const deliverySchema = new Schema({
             message: "Amount received should be 0 for prepaid payments.",
         },
     },
+
+    emptyCollected: {
+        type: Boolean,
+        default: false, // Default to false (not collected)
+    },
+    
 }, { timestamps: true }); // Adds createdAt and updatedAt fields
 
 module.exports = mongoose.model("Delivery", deliverySchema);
