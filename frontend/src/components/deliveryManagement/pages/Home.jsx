@@ -4,6 +4,17 @@ import { useState } from 'react';
 import { ShoppingCart, User, ChevronDown, Menu, X, Instagram, Facebook, Twitter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserService } from '../../userManagement/services/userService';
+import logo from '../../../assets/logo.jpg';
+import img1 from '../../../assets/1.jpg';
+import img2 from '../../../assets/2.jpg';
+import img3 from '../../../assets/3.jpg';
+import img4 from '../../../assets/4.jpg';
+import img5 from '../../../assets/5.jpg';
+import img6 from '../../../assets/6.jpg';
+import img7 from '../../../assets/7.jpg';
+import img8 from '../../../assets/8.jpg';
+import img9 from '../../../assets/9.jpg';
+import img10 from '../../../assets/acc.jpg';
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -143,7 +154,7 @@ export default function HomePage() {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <div className="bg-blue-700 rounded-lg p-6 w-full max-w-md h-64 flex items-center justify-center">
-                <p className="text-center text-lg">Gas Cylinder Image Placeholder</p>
+                <p className="text-center text-lg"><img src={img3} alt="gas" className="w-110 h-60"/></p>
               </div>
             </div>
           </div>
@@ -159,7 +170,7 @@ export default function HomePage() {
             {/* Gas Category */}
             <div className="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
               <div className="bg-blue-600 h-48 flex items-center justify-center">
-                <p className="text-white text-lg">Gas Cylinders Image</p>
+                <p className="text-white text-lg"><img src={img1} alt="gas" className="w-95 h-49"/></p>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-3">Industrial Gases</h3>
@@ -171,7 +182,7 @@ export default function HomePage() {
             {/* Accessories Category */}
             <div className="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
               <div className="bg-blue-700 h-48 flex items-center justify-center">
-                <p className="text-white text-lg">Accessories Image</p>
+                <p className="text-white text-lg"><img src={img10} alt="Acc" className="w-95 h-49"/></p>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-3">Gas Accessories</h3>
@@ -183,7 +194,7 @@ export default function HomePage() {
             {/* Services */}
             <div className="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
               <div className="bg-blue-800 h-48 flex items-center justify-center">
-                <p className="text-white text-lg">Services Image</p>
+                <p className="text-white text-lg"><img src={img9} alt="services" className="w-95 h-49"/></p>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-3">Technical Services</h3>
@@ -213,7 +224,7 @@ export default function HomePage() {
             </div>
             <div className="md:w-1/2 flex justify-center">
               <div className="bg-gray-200 rounded-lg p-6 w-full max-w-md h-64 flex items-center justify-center">
-                <p className="text-center text-gray-600">Company Image Placeholder</p>
+                <p className="text-center text-gray-600"><img src={img8} alt="gas" className="w-102 h-55"/></p>
               </div>
             </div>
           </div>
