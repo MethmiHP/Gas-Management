@@ -752,7 +752,7 @@ const AdminProductManagement = () => {
                     )}
                     
                     <div className="text-lg font-bold text-gray-900">
-                      ${product.price ? product.price.toFixed(2) : '0.00'}
+                      LKR{product.price ? product.price.toFixed(2) : '0.00'}
                     </div>
                   </div>
                   

@@ -194,14 +194,20 @@ const ProductsPage = () => {
           </div>
         )}
       
-        {/* Hero section */}
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-2xl mb-10 p-10 shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 bg-black opacity-10 pointer-events-none"></div> {/* Subtle overlay */}
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 relative z-10">Discover Our Gas Solutions</h1>
-          <p className="text-lg md:text-xl opacity-90 max-w-3xl relative z-10">
-            Explore our curated selection of high-quality gas cylinders and essential accessories.
-          </p>
-        </div>
+     {/* Hero section */}
+<div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white rounded-2xl mb-10 p-10 shadow-lg relative overflow-hidden">
+  <div className="absolute inset-0 bg-black opacity-10 pointer-events-none"></div> {/* Subtle overlay */}
+  
+  <div className="relative z-10">
+    <h1 className="text-4xl md:text-5xl font-bold mb-4">
+      Discover Our Gas Solutions
+    </h1>
+    <p className="text-lg md:text-xl opacity-90 max-w-3xl">
+      Explore our curated selection of high-quality gas cylinders and essential accessories.
+    </p>
+  </div>
+</div>
+
         
         {/* Filters and Search */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-8"> {/* Subtle border */}
@@ -345,7 +351,7 @@ const ProductsPage = () => {
                     {/* Price and Add to Cart */}                  
                     <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                       <span className="text-lg font-bold text-gray-900">
-                        ${(product.price !== undefined && product.price !== null) ? product.price.toFixed(2) : 'N/A'}
+                        LKR{(product.price !== undefined && product.price !== null) ? product.price.toFixed(2) : 'N/A'}
                       </span>
                       <button 
                         onClick={(e) => {
@@ -422,7 +428,7 @@ const ProductsPage = () => {
                     </div>
                     
                     <div className="text-3xl font-bold text-gray-900 mb-6">
-                      ${(selectedProduct.price !== undefined && selectedProduct.price !== null) ? selectedProduct.price.toFixed(2) : '0.00'}
+                      LKR{(selectedProduct.price !== undefined && selectedProduct.price !== null) ? selectedProduct.price.toFixed(2) : '0.00'}
                     </div>
                     
                     <div className="mb-6">
