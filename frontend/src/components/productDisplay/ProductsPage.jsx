@@ -4,7 +4,10 @@ import { ProductService } from '../inventoryManagement/services/product.services
 import { FiShoppingCart, FiFilter, FiRefreshCw, FiPackage, FiX, FiMinus, FiPlus, FiCheckCircle } from 'react-icons/fi';
 import axios from 'axios';
 import Header from '../layout/Header';
-import API_CONFIG from '../../utils/apiConfig';
+import API_CONFIG from '../../config/apiConfig';
+import { toast } from 'react-toastify';
+import { useAuth } from '../userManagement/context/AuthContext';
+import { isLocalCart, getLocalCart, saveLocalCart, addItemToLocalCart } from '../utils/cartUtils';
 
 const ProductsPage = () => {
   const location = useLocation();
@@ -22,6 +25,7 @@ const ProductsPage = () => {
   const [cartId, setCartId] = useState(localStorage.getItem('cartId') || null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
     fetchProducts();
@@ -42,7 +46,7 @@ const ProductsPage = () => {
     try {
       // First try to create cart using the API
       try {
-        const response = await axios.post(`${API_CONFIG.getUrl(API_CONFIG.ENDPOINTS.CARTS)}`, {
+        const response = await axios.post(`http://localhost:5000/cart/carts`, {
           userId: localStorage.getItem('userId') || null
         });
         
@@ -64,14 +68,10 @@ const ProductsPage = () => {
       console.error('Error creating cart:', err);
     }
   };
-  
+
   // Add to cart functionality
   const handleAddToCart = async (product, qty = 1) => {
-    if (!localStorage.getItem('token') && !localStorage.getItem('tempCart')) {
-      navigate('/login', { state: { from: location.pathname } });
-      return;
-    }
-
+    // Remove login requirement for adding to cart
     if (!cartId) {
       await createCart();
     }
@@ -79,8 +79,18 @@ const ProductsPage = () => {
     try {
       setAddingToCart(true);
       
+      // Check if this is a local/temporary cart
+      if (isLocalCart(cartId)) {
+        // Use the shared utility function to add item to local cart
+        addItemToLocalCart(product, qty);
+        setCartSuccess(true);
+        setTimeout(() => setCartSuccess(false), 3000);
+        return;
+      }
+      
+      // If not a local cart, proceed with API call
       try {
-        const response = await axios.post(`${API_CONFIG.getUrl(API_CONFIG.ENDPOINTS.CARTS)}/${cartId}/items`, {
+        const response = await axios.post(`http://localhost:5000/cart/carts/${cartId}/items`, {
           productId: product._id,
           quantity: qty
         });
@@ -91,38 +101,20 @@ const ProductsPage = () => {
           window.dispatchEvent(new CustomEvent('cartUpdated'));
         }
       } catch (apiError) {
-        console.warn('Server unavailable, using local storage for cart:', apiError.message);
+        console.warn('Server unavailable, switching to local cart mode:', apiError.message);
         
-        // If server is unavailable, update the cart in local storage
-        const tempCart = JSON.parse(localStorage.getItem('tempCart') || '{"items":[], "totalAmount":0}');
+        // Create a temporary local cart
+        const tempCartId = 'temp-' + Date.now();
+        localStorage.setItem('cartId', tempCartId);
+        setCartId(tempCartId);
         
-        // Find if item exists
-        const existingItemIndex = tempCart.items.findIndex(item => item.productId === product._id);
+        // Initialize empty cart in localStorage
+        saveLocalCart({ items: [], totalAmount: 0 });
         
-        if (existingItemIndex >= 0) {
-          // Update quantity if item exists
-          tempCart.items[existingItemIndex].quantity += qty;
-        } else {
-          // Add new item
-          tempCart.items.push({
-            productId: product._id,
-            productName: product.name,
-            price: product.price || 0,
-            quantity: qty,
-            category: product.type,
-            cartItemId: 'item-' + Date.now()
-          });
-        }
-        
-        // Update total amount
-        tempCart.totalAmount = tempCart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
-        // Save back to local storage
-        localStorage.setItem('tempCart', JSON.stringify(tempCart));
-        
+        // Add item to local cart
+        addItemToLocalCart(product, qty);
         setCartSuccess(true);
         setTimeout(() => setCartSuccess(false), 3000);
-        window.dispatchEvent(new CustomEvent('cartUpdated'));
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -276,7 +268,6 @@ const ProductsPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* ...existing code for product cards... */}
             {filteredProducts.map(product => (
               <div 
                 key={product._id} 
@@ -355,7 +346,6 @@ const ProductsPage = () => {
         {/* Product Detail Modal */}
         {selectedProduct && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            {/* ...existing modal code... */}
             <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <div className="relative">
                 <button 

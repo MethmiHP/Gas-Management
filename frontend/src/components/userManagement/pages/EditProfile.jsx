@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserService } from '../services/userService';
 import { toast } from 'react-toastify';
+import ProfilePhotoUploader from '../components/ProfilePhotoUploader';
 
 const EditProfile = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    avatarUrl: ''
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -40,6 +42,7 @@ const EditProfile = () => {
         setFormData({
           username: userData.data.username || '',
           email: userData.data.email || '',
+          avatarUrl: userData.data.avatarUrl || ''
         });
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -65,6 +68,13 @@ const EditProfile = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handlePhotoUpdated = (newAvatarUrl) => {
+    setFormData(prev => ({
+      ...prev,
+      avatarUrl: newAvatarUrl
     }));
   };
 
@@ -122,6 +132,13 @@ const EditProfile = () => {
             </button>
           </div>
           <p className="text-gray-600 mt-2">Update your personal information</p>
+        </div>
+
+        <div className="flex justify-center mb-8">
+          <ProfilePhotoUploader 
+            currentAvatarUrl={formData.avatarUrl}
+            onPhotoUpdated={handlePhotoUpdated}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

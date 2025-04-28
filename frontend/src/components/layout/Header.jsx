@@ -2,27 +2,18 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, ChevronDown, Menu, X } from 'lucide-react';
 import axios from 'axios';
-import { UserService } from '../userManagement/services/userService';
+import { useAuth } from '../userManagement/context/AuthContext';
+import { isLocalCart, getLocalCart } from '../utils/cartUtils';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState('');
+  const { isAuthenticated, userRole, logout } = useAuth();
   const navigate = useNavigate();
   
   // Check if user is logged in and get user role
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-    
-    if (token) {
-      // Get user role from localStorage
-      const role = UserService.getUserRole();
-      setUserRole(role || 'customer');
-    }
-    
     // Get cart count
     fetchCartCount();
     
@@ -40,6 +31,14 @@ const Header = () => {
     const cartId = localStorage.getItem('cartId');
     if (!cartId) return;
     
+    // If it's a local cart, get count from localStorage
+    if (isLocalCart(cartId)) {
+      const localCart = getLocalCart();
+      setCartCount(localCart.items.length);
+      return;
+    }
+    
+    // Otherwise use the API
     try {
       const response = await axios.get(`http://localhost:5000/cart/carts/${cartId}`);
       if (response.data.success) {
@@ -48,13 +47,19 @@ const Header = () => {
       }
     } catch (error) {
       console.error('Error fetching cart count:', error);
+      
+      // If API fails, try to get count from localStorage as fallback
+      try {
+        const localCart = getLocalCart();
+        setCartCount(localCart.items.length);
+      } catch (e) {
+        console.error('Failed to get cart count from localStorage:', e);
+      }
     }
   };
   
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
+    logout();
     navigate('/login');
   };
   
@@ -63,7 +68,7 @@ const Header = () => {
     if (userRole === 'admin') {
       navigate('/admin/dashboard');
     } else if (userRole === 'driver') {
-      navigate('/driver-dashboard');
+      navigate('/driver/dashboard');
     } else {
       navigate('/customer/dashboard');
     }
@@ -115,28 +120,11 @@ const Header = () => {
               )}
             </Link>
             
-            {isLoggedIn ? (
-              <div className="relative group">
-                <button className="flex items-center hover:text-blue-300 transition duration-300">
-                  <User className="h-5 w-5 mr-1" /> Account
-                </button>
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 text-gray-800 hidden group-hover:block">
-                  <button 
-                    onClick={navigateToUserDashboard} 
-                    className="block w-full text-left px-4 py-2 hover:bg-blue-100"
-                  >
-                    My Dashboard
-                  </button>
-                  <Link to="/orders" className="block px-4 py-2 hover:bg-blue-100">My Orders</Link>
-                  <Link to="/profile" className="block px-4 py-2 hover:bg-blue-100">Edit Profile</Link>
-                  <button 
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 hover:bg-blue-100 text-red-600"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
+            {isAuthenticated ? (
+              <>
+                <button onClick={navigateToUserDashboard} className="hover:text-blue-300 transition duration-300">Dashboard</button>
+                <button onClick={handleLogout} className="hover:text-blue-300 transition duration-300">Logout</button>
+              </>
             ) : (
               <>
                 <Link to="/login" className="hover:text-blue-300 transition duration-300">Login</Link>
@@ -193,7 +181,7 @@ const Header = () => {
             <Link to="/about" className="py-2 block hover:bg-blue-700 px-3 rounded">About Us</Link>
             <Link to="/contact" className="py-2 block hover:bg-blue-700 px-3 rounded">Contact</Link>
             
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <>
                 <button 
                   onClick={navigateToUserDashboard} 

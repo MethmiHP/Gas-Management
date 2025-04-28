@@ -6,9 +6,17 @@ export default function DeliveryForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', content: '' });
   
-  // Form data state
+  // Generate a unique order ID when component mounts
+  const generateOrderId = () => {
+    // Generate a random order ID with prefix ORD- followed by current timestamp and 3 random digits
+    const timestamp = new Date().getTime();
+    const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `ORD-${timestamp}-${randomDigits}`;
+  };
+  
+  // Form data state - initialize with auto-generated order ID
   const [formData, setFormData] = useState({
-    orderId: '',
+    orderId: generateOrderId(),
     customerName: '',
     address: '',
     phone: '',
@@ -43,9 +51,7 @@ export default function DeliveryForm() {
   const validateField = (name, value) => {
     switch (name) {
       case 'orderId':
-        if (!value.trim()) return 'Order ID is required';
-        if (value.length < 3) return 'Order ID should be at least 3 characters';
-        if (!/^[a-zA-Z0-9-_]+$/.test(value)) return 'Order ID should contain only letters, numbers, hyphens, and underscores';
+        // The Order ID is now auto-generated, so we don't need validation here
         return '';
       
       case 'customerName':
@@ -182,7 +188,7 @@ export default function DeliveryForm() {
       
       // Reset form after successful submission
       setFormData({
-        orderId: '',
+        orderId: generateOrderId(),
         customerName: '',
         address: '',
         phone: '',
@@ -269,6 +275,19 @@ export default function DeliveryForm() {
     }`;
   };
 
+  useEffect(() => {
+    // Get the pending order ID from localStorage
+    const pendingOrderId = localStorage.getItem('pendingOrderId');
+    
+    // If we have a pending order ID, use it
+    if (pendingOrderId) {
+      setFormData(prevState => ({
+        ...prevState,
+        orderId: pendingOrderId
+      }));
+    }
+  }, []);
+
   return (
     <div className="bg-gray-50 min-h-screen p-6">
       <div className="max-w-3xl mx-auto">
@@ -293,24 +312,19 @@ export default function DeliveryForm() {
             
             <form onSubmit={handleSubmit} noValidate>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Order ID */}
+                {/* Order ID - now read-only */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Order ID*
+                    Order ID (Auto-Generated)
                   </label>
                   <input
                     type="text"
                     name="orderId"
                     value={formData.orderId}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={getInputClasses('orderId')}
-                    required
-                    placeholder="Enter unique order ID"
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md cursor-not-allowed text-gray-600"
                   />
-                  {errors.orderId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.orderId}</p>
-                  )}
+                  <p className="mt-1 text-xs text-gray-500">This ID is automatically generated and cannot be edited</p>
                 </div>
                 
                 {/* Customer Name */}

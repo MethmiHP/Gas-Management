@@ -63,9 +63,30 @@ const OrderController = {
     }
   },
 
-  // Create new order - Updated to remove orderId from required fields
+  // Get orders by username
+  getOrdersByUsername: async (req, res) => {
+    try {
+      const username = req.params.username;
+      const userOrders = await Order.find({ userName: username });
+      
+      res.status(200).json({
+        success: true,
+        count: userOrders.length,
+        data: userOrders
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Server Error: ' + error.message
+      });
+    }
+  },
+
+  // Create new order
   createOrder: async (req, res) => {
     try {
+      console.log('Received order data:', req.body);
+      
       const {
         userId,
         userName,
@@ -73,32 +94,43 @@ const OrderController = {
         discount,
         paymentMethod,
         paymentStatus,
-        timestamp
+        items,
+        amount,
+        timestamp,
+        isGuestCheckout
       } = req.body;
       
-      // Validate request - removed orderId from validation
-      if (!userId || !userName || !orderType || !paymentMethod || !paymentStatus) {
+      // Validate request - allow guest checkout with minimal fields
+      if (!userName || !orderType || !paymentMethod || !paymentStatus) {
+        console.log('Validation failed - missing required fields');
         return res.status(400).json({
           success: false,
           error: 'Please provide all required fields'
         });
       }
       
+      // Create the order document
       const newOrder = await Order.create({
-        userId,
+        userId: userId || 'guest',
         userName,
         orderType,
+        items: items || [],
         discount: discount || 0,
+        amount: amount || 0,
         paymentMethod,
         paymentStatus,
-        timestamp: timestamp || new Date()
+        timestamp: timestamp || new Date(),
+        isGuestCheckout: isGuestCheckout || false
       });
+      
+      console.log('Order created successfully:', newOrder);
       
       res.status(201).json({
         success: true,
         data: newOrder
       });
     } catch (error) {
+      console.error('Error creating order:', error);
       res.status(500).json({
         success: false,
         error: 'Server Error: ' + error.message

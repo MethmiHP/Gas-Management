@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Add this import
+import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Edit, Trash2, Check, X, ChevronDown, ShoppingCart, MinusCircle, Plus, Minus, ArrowRight } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../userManagement/context/AuthContext';
+import { UserService } from '../userManagement/services/userService';
+import { isLocalCart, getLocalCart, saveLocalCart, updateLocalCartItemQty } from '../utils/cartUtils';
 
-// Base URL for API requests - Fix API endpoint to match backend routes
+// Base URL for API requests
 const API_BASE_URL = 'http://localhost:5000';
 
 const CartController = () => {
-  const navigate = useNavigate(); // Initialize navigate function
-  // State for cart items and form data
+  const navigate = useNavigate();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [cartId, setCartId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     productId: '',
     productName: '',
@@ -22,7 +25,7 @@ const CartController = () => {
     quantity: 1,
     category: ''
   });
-  
+
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formAnimation, setFormAnimation] = useState('');
@@ -30,52 +33,42 @@ const CartController = () => {
   const [tableAnimation, setTableAnimation] = useState(true);
   const [cartTotal, setCartTotal] = useState(0);
 
-  // Initialize cart on component mount
+  // Check authentication when component mounts
   useEffect(() => {
-    // Create a new cart or load existing cart from localStorage
-    const storedCartId = localStorage.getItem('cartId');
-    if (storedCartId) {
-      setCartId(storedCartId);
-      fetchCart(storedCartId);
+    if (!authLoading && !isAuthenticated) {
+      setError('Please log in to view your cart');
+    } else if (!authLoading && isAuthenticated) {
+      // Only initialize cart if user is logged in
+      initCart();
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // Initialize cart
+  const initCart = () => {
+    const existingCartId = localStorage.getItem('cartId');
+
+    if (existingCartId) {
+      setCartId(existingCartId);
+      fetchCart(existingCartId);
     } else {
       createNewCart();
     }
-    
-    // Load products
-    fetchProducts();
-  }, []);
 
-  // Calculate cart total whenever cartItems changes
+    fetchProducts();
+  };
+
   useEffect(() => {
     const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     setCartTotal(total);
   }, [cartItems]);
 
-  // Helper function to check if using local cart
-  const isLocalCart = (id) => {
-    return id && id.startsWith('temp-');
-  };
-
-  // Get local cart data from localStorage
-  const getLocalCart = () => {
-    const cartData = localStorage.getItem('tempCart');
-    return cartData ? JSON.parse(cartData) : { items: [], totalAmount: 0 };
-  };
-
-  // Save local cart data to localStorage
-  const saveLocalCart = (cart) => {
-    localStorage.setItem('tempCart', JSON.stringify(cart));
-  };
-
-  // Create a new cart
   const createNewCart = async () => {
     try {
       setLoading(true);
-      // Fix: Updated API URL to match backend route
       const response = await axios.post(`${API_BASE_URL}/cart/carts`, {
-        userId: localStorage.getItem('userId') || null // Include userId if available
+        userId: localStorage.getItem('userId') || null
       });
-      
+
       if (response.data.success) {
         const newCartId = response.data.data.cartId;
         localStorage.setItem('cartId', newCartId);
@@ -85,8 +78,7 @@ const CartController = () => {
     } catch (err) {
       setError(`Failed to create cart: ${err.message}`);
       console.error('Error creating cart:', err);
-      
-      // Fallback to local cart if API fails
+
       const tempCartId = 'temp-' + Date.now();
       localStorage.setItem('cartId', tempCartId);
       localStorage.setItem('tempCart', JSON.stringify({ items: [], totalAmount: 0 }));
@@ -97,9 +89,7 @@ const CartController = () => {
     }
   };
 
-  // Fetch cart data
   const fetchCart = async (id) => {
-    // If using local cart, get data from localStorage
     if (isLocalCart(id)) {
       const localCart = getLocalCart();
       setCartItems(localCart.items || []);
@@ -110,21 +100,19 @@ const CartController = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/cart/carts/${id}`);
-      
+
       if (response.data.success) {
         setCartItems(response.data.data.cart.items || []);
         setCartTotal(response.data.data.totalAmount || 0);
       }
     } catch (err) {
-      // If cart not found, create a new one
       if (err.response && err.response.status === 404) {
         localStorage.removeItem('cartId');
         createNewCart();
       } else {
         setError(`Failed to fetch cart: ${err.message}`);
         console.error('Error fetching cart:', err);
-        
-        // If API calls are failing, switch to local cart
+
         const tempCartId = 'temp-' + Date.now();
         localStorage.setItem('cartId', tempCartId);
         localStorage.setItem('tempCart', JSON.stringify({ items: [], totalAmount: 0 }));
@@ -136,21 +124,20 @@ const CartController = () => {
     }
   };
 
-  // Fetch products
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // Fix: Updated API URL to match backend route
-      const response = await axios.get(`${API_BASE_URL}/cart/products`);
-      
+      const response = await axios.get(`${API_BASE_URL}/api/products`);
+
       if (response.data.success) {
-        setProducts(response.data.data.products || []);
+        setProducts(response.data.data || []);
+      } else {
+        setProducts(response.data || []);
       }
     } catch (err) {
       setError(`Failed to fetch products: ${err.message}`);
       console.error('Error fetching products:', err);
-      
-      // Set some dummy products for testing if API call fails
+
       setProducts([
         { _id: '1', name: 'Gas Cylinder (Small)', price: 25.99, category: 'Gases' },
         { _id: '2', name: 'Gas Cylinder (Medium)', price: 45.99, category: 'Gases' },
@@ -161,20 +148,18 @@ const CartController = () => {
     }
   };
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    // If the productName is selected, find the corresponding product details
+
     if (name === 'productName') {
       const product = products.find(p => p.name === value);
       if (product) {
         setFormData({
           ...formData,
           productName: product.name,
-          productId: product._id, // Ensure we're using _id consistently
+          productId: product._id,
           price: product.price,
-          category: product.category || product.type // Support both category and type fields
+          category: product.category || product.type
         });
       } else {
         setFormData({
@@ -190,9 +175,7 @@ const CartController = () => {
     }
   };
 
-  // Handle quantity change
   const handleQuantityChange = async (cartItemId, change) => {
-    // If using local cart, update the cart in localStorage
     if (isLocalCart(cartId)) {
       try {
         setLoading(true);
@@ -200,21 +183,14 @@ const CartController = () => {
 
         const localCart = getLocalCart();
         const itemIndex = localCart.items.findIndex(item => item.cartItemId === cartItemId);
-        
+
         if (itemIndex !== -1) {
           const newQuantity = Math.max(1, localCart.items[itemIndex].quantity + change);
-          localCart.items[itemIndex].quantity = newQuantity;
-          
-          // Update total amount
-          localCart.totalAmount = localCart.items.reduce(
-            (total, item) => total + (item.price * item.quantity), 0
-          );
-          
-          saveLocalCart(localCart);
-          
+          const updatedCart = updateLocalCartItemQty(cartItemId, newQuantity);
+
           setTimeout(() => {
-            setCartItems(localCart.items);
-            setCartTotal(localCart.totalAmount);
+            setCartItems(updatedCart.items);
+            setCartTotal(updatedCart.totalAmount);
             setTableAnimation(true);
           }, 300);
         }
@@ -231,12 +207,12 @@ const CartController = () => {
     try {
       setLoading(true);
       setTableAnimation(false);
-      
+
       const response = await axios.patch(
-        `${API_BASE_URL}/cart/carts/${cartId}/items/${cartItemId}/quantity`, 
+        `${API_BASE_URL}/cart/carts/${cartId}/items/${cartItemId}/quantity`,
         { change }
       );
-      
+
       if (response.data.success) {
         setTimeout(() => {
           setCartItems(response.data.data.cart.items);
@@ -253,27 +229,30 @@ const CartController = () => {
     }
   };
 
-  // Handle form submission (add/update item)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    if (!isAuthenticated) {
+      setError('Please log in to add items to your cart');
+      navigate('/login', { state: { from: '/cart' } });
+      return;
+    }
+
     if (!formData.productId) {
       setError('Please select a valid product');
       return;
     }
-    
-    // If using local cart, update the cart in localStorage
+
     if (isLocalCart(cartId)) {
       try {
         setLoading(true);
         setTableAnimation(false);
-        
+
         const localCart = getLocalCart();
-        
+
         if (editingId) {
-          // Update existing item
           const itemIndex = localCart.items.findIndex(item => item.cartItemId === editingId);
-          
+
           if (itemIndex !== -1) {
             localCart.items[itemIndex] = {
               ...localCart.items[itemIndex],
@@ -285,7 +264,6 @@ const CartController = () => {
             };
           }
         } else {
-          // Add new item
           const cartItemId = 'local-item-' + Date.now();
           localCart.items.push({
             cartItemId,
@@ -297,31 +275,28 @@ const CartController = () => {
             timestamp: new Date()
           });
         }
-        
-        // Update total amount
+
         localCart.totalAmount = localCart.items.reduce(
           (total, item) => total + (item.price * item.quantity), 0
         );
-        
+
         saveLocalCart(localCart);
-        
+
         setTimeout(() => {
           setCartItems(localCart.items);
           setCartTotal(localCart.totalAmount);
           setTableAnimation(true);
-          
-          // Reset form data
+
           setFormData({
             productId: '',
             productName: '',
             price: 0,
             quantity: 1,
-            category: '' // Fixed: Complete the truncated line
+            category: ''
           });
-          
+
           setEditingId(null);
-          
-          // Hide form with animation
+
           setFormAnimation('animate-fade-out');
           setTimeout(() => {
             setShowForm(false);
@@ -340,9 +315,8 @@ const CartController = () => {
 
     try {
       setLoading(true);
-      
+
       if (editingId) {
-        // Update existing cart item
         const response = await axios.put(
           `${API_BASE_URL}/cart/carts/${cartId}/items/${editingId}`,
           {
@@ -350,20 +324,18 @@ const CartController = () => {
             quantity: formData.quantity
           }
         );
-        
+
         if (response.data.success) {
-          // Trigger table animation
           setTableAnimation(false);
           setTimeout(() => {
             setCartItems(response.data.data.cart.items);
             setCartTotal(response.data.data.totalAmount);
             setTableAnimation(true);
           }, 300);
-          
+
           setEditingId(null);
         }
       } else {
-        // Add new item to cart
         const response = await axios.post(
           `${API_BASE_URL}/cart/carts/${cartId}/items`,
           {
@@ -371,9 +343,8 @@ const CartController = () => {
             quantity: formData.quantity
           }
         );
-        
+
         if (response.data.success) {
-          // Trigger table animation
           setTableAnimation(false);
           setTimeout(() => {
             setCartItems(response.data.data.cart.items);
@@ -382,8 +353,7 @@ const CartController = () => {
           }, 300);
         }
       }
-      
-      // Reset form
+
       setFormData({
         productId: '',
         productName: '',
@@ -391,8 +361,7 @@ const CartController = () => {
         quantity: 1,
         category: ''
       });
-      
-      // Hide form with animation
+
       setFormAnimation('animate-fade-out');
       setTimeout(() => {
         setShowForm(false);
@@ -401,14 +370,12 @@ const CartController = () => {
     } catch (err) {
       console.error('Error saving item:', err);
       setError(`Failed to save item: ${err.message}`);
-      
-      // If API fails, switch to local cart
+
       if (err.response && err.response.status === 404) {
         const tempCartId = 'temp-' + Date.now();
         localStorage.setItem('cartId', tempCartId);
         setCartId(tempCartId);
-        
-        // Try submitting to local cart
+
         setTimeout(() => handleSubmit(e), 300);
       }
     } finally {
@@ -416,24 +383,21 @@ const CartController = () => {
     }
   };
 
-  // Handle delete button click
   const handleDelete = async (cartItemId) => {
-    // If using local cart, update the cart in localStorage
     if (isLocalCart(cartId)) {
       try {
         setLoading(true);
         setTableAnimation(false);
-        
+
         const localCart = getLocalCart();
         localCart.items = localCart.items.filter(item => item.cartItemId !== cartItemId);
-        
-        // Update total amount
+
         localCart.totalAmount = localCart.items.reduce(
           (total, item) => total + (item.price * item.quantity), 0
         );
-        
+
         saveLocalCart(localCart);
-        
+
         setTimeout(() => {
           setCartItems(localCart.items);
           setCartTotal(localCart.totalAmount);
@@ -451,14 +415,13 @@ const CartController = () => {
 
     try {
       setLoading(true);
-      
-      // Delete with animation
+
       setTableAnimation(false);
-      
+
       const response = await axios.delete(
         `${API_BASE_URL}/cart/carts/${cartId}/items/${cartItemId}`
       );
-      
+
       if (response.data.success) {
         setTimeout(() => {
           setCartItems(response.data.data.cart.items);
@@ -475,19 +438,17 @@ const CartController = () => {
     }
   };
 
-  // Handle clear cart button click
   const handleClearCart = async () => {
     if (cartItems.length === 0) return;
-    
-    // If using local cart, clear the cart in localStorage
+
     if (isLocalCart(cartId)) {
       try {
         setLoading(true);
         setTableAnimation(false);
-        
+
         const emptyCart = { items: [], totalAmount: 0 };
         saveLocalCart(emptyCart);
-        
+
         setTimeout(() => {
           setCartItems([]);
           setCartTotal(0);
@@ -502,15 +463,14 @@ const CartController = () => {
       }
       return;
     }
-    
+
     try {
       setLoading(true);
-      
-      // Clear with animation
+
       setTableAnimation(false);
-      
+
       const response = await axios.delete(`${API_BASE_URL}/cart/carts/${cartId}`);
-      
+
       if (response.data.success) {
         setTimeout(() => {
           setCartItems([]);
@@ -527,7 +487,6 @@ const CartController = () => {
     }
   };
 
-  // Handle add new item button click
   const handleAddNew = () => {
     setEditingId(null);
     setFormData({
@@ -541,7 +500,6 @@ const CartController = () => {
     setFormAnimation('animate-fade-in');
   };
 
-  // Handle cancel button click
   const handleCancel = () => {
     setFormAnimation('animate-fade-out');
     setTimeout(() => {
@@ -551,37 +509,125 @@ const CartController = () => {
     }, 300);
   };
 
-  // Handle proceed to next step
-  const handleProceedToNext = () => {
+  const handleProceedToNext = async () => {
     if (cartItems.length === 0) {
       setError('Please add items to your cart before proceeding.');
       return;
     }
-    
-    // Save cart details for later use if needed
-    localStorage.setItem('cartTotal', cartTotal);
-    localStorage.setItem('cartItemCount', cartItems.length);
-    
-    // Navigate to the delivery form page
-    navigate('/delivery-form');
+
+    try {
+      setLoading(true);
+      
+      // Calculate the total amount from cart items
+      const calculatedTotal = cartItems.reduce(
+        (sum, item) => sum + (item.price * item.quantity), 
+        0
+      );
+      
+      // If the user is not authenticated, still allow proceeding but note it
+      const isGuest = !isAuthenticated;
+      
+      // Create an order with either authenticated user data or as guest
+      const orderData = {
+        userId: localStorage.getItem('userId') || 'guest',
+        userName: isGuest ? 'Guest User' : UserService.getCurrentUsername() || 'Customer',
+        orderType: 'Gases',
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category || 'Gases'
+        })),
+        amount: calculatedTotal,
+        discount: 0,
+        paymentMethod: 'Cash on Delivery',
+        paymentStatus: 'Pending',
+        isGuestCheckout: isGuest
+      };
+
+      console.log('Creating order with data:', orderData);
+      
+      // FIX: Define the API URL with the correct /api prefix
+      const API_URL = 'http://localhost:5000/api';
+      
+      // Save the order to database with appropriate headers
+      try {
+        const response = await axios.post(
+          `${API_URL}/orders`, 
+          orderData,
+          {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          }
+        );
+        
+        console.log('Order creation response:', response);
+        
+        if (response.data && response.data.success) {
+          const savedOrder = response.data.data;
+          console.log('Order saved successfully:', savedOrder);
+          
+          // Mark the cart as converted if using server cart
+          if (!isLocalCart(cartId)) {
+            try {
+              await axios.patch(`${API_URL}/cart/carts/${cartId}/convert`);
+              console.log('Cart marked as converted');
+            } catch (conversionError) {
+              console.warn('Error marking cart as converted:', conversionError);
+            }
+          }
+          
+          // Save order details to localStorage for the next steps
+          localStorage.setItem('cartTotal', cartTotal);
+          localStorage.setItem('cartItemCount', cartItems.length);
+          localStorage.setItem('orderItems', JSON.stringify(cartItems));
+          localStorage.setItem('pendingOrderId', savedOrder.orderId);
+          
+          // Navigate to delivery form
+          navigate('/delivery-form');
+        } else {
+          throw new Error('Order creation response did not indicate success');
+        }
+      } catch (apiError) {
+        console.error('API error details:', apiError.response?.data || apiError.message);
+        setError(`Failed to save order: ${apiError.response?.data?.error || apiError.message}`);
+        
+        // Still proceed to next step in development/testing
+        if (process.env.NODE_ENV === 'development') {
+          const localOrderId = `local-${Date.now()}`;
+          console.warn('In development - proceeding with local order ID:', localOrderId);
+          
+          localStorage.setItem('cartTotal', cartTotal);
+          localStorage.setItem('cartItemCount', cartItems.length);
+          localStorage.setItem('orderItems', JSON.stringify(cartItems));
+          localStorage.setItem('pendingOrderId', localOrderId);
+          
+          navigate('/delivery-form');
+        }
+      }
+    } catch (err) {
+      setError(`Failed to process your order: ${err.message}`);
+      console.error('Error proceeding with order:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle edit button click
   const handleEdit = (item) => {
-    // Find the product in the products array to ensure we have all product information
     const product = products.find(p => p._id === item.productId);
-    
+
     if (product) {
-      // If product is found in our product list, use the full product data
       setFormData({
         productId: item.productId,
-        productName: product.name, // Use name from products array to ensure it matches dropdown options
+        productName: product.name,
         price: item.price,
         quantity: item.quantity,
         category: item.category
       });
     } else {
-      // If product is not in our list, use the data from the cart item
       setFormData({
         productId: item.productId,
         productName: item.productName,
@@ -589,8 +635,7 @@ const CartController = () => {
         quantity: item.quantity,
         category: item.category
       });
-      
-      // If we're using mock products and this isn't in the list, add it temporarily
+
       if (products.every(p => p._id !== item.productId)) {
         setProducts(prevProducts => [
           ...prevProducts,
@@ -603,41 +648,35 @@ const CartController = () => {
         ]);
       }
     }
-    
+
     setEditingId(item.cartItemId);
     setShowForm(true);
     setFormAnimation('animate-fade-in');
-    
-    // Scroll to form for better user experience
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Add a debug function to see what's in the cart and products
   const debugCartAndProducts = () => {
     console.log('Current cartItems:', cartItems);
     console.log('Available products:', products);
     console.log('Current formData:', formData);
   };
 
-  // Format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString();
   };
 
-  // Format price for display
   const formatPrice = (price) => {
     return `$${price.toFixed(2)}`;
   };
 
-  // Clear error message
   const clearError = () => {
     setError(null);
   };
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
-      {/* Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg">
@@ -645,12 +684,11 @@ const CartController = () => {
           </div>
         </div>
       )}
-      
-      {/* Error Message */}
+
       {error && (
         <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
           <span className="block sm:inline">{error}</span>
-          <span 
+          <span
             className="absolute top-0 bottom-0 right-0 px-4 py-3"
             onClick={clearError}
           >
@@ -658,16 +696,15 @@ const CartController = () => {
           </span>
         </div>
       )}
-      
+
       <div className="bg-white rounded-lg shadow-lg p-6 transform transition-all duration-500 hover:shadow-xl">
         <h1 className="text-3xl font-bold mb-6 text-gray-800 relative inline-block">
           Shopping Cart
           <span className="absolute bottom-0 left-0 w-0 h-1 bg-blue-600 transition-all duration-500 group-hover:w-full"></span>
         </h1>
-        
+
         <div className="flex justify-between items-center mb-6">
-          {/* Add New Item Button */}
-          <button 
+          <button
             onClick={handleAddNew}
             className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-all duration-300 
                      transform hover:scale-105 hover:shadow-lg flex items-center gap-2"
@@ -679,9 +716,8 @@ const CartController = () => {
             <PlusCircle size={20} />
             <span>Add Item to Cart</span>
           </button>
-          
-          {/* Clear Cart Button */}
-          <button 
+
+          <button
             onClick={handleClearCart}
             className={`bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-all duration-300 
                       transform hover:scale-105 hover:shadow-lg flex items-center gap-2 ${cartItems.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -695,8 +731,7 @@ const CartController = () => {
             <span>Clear Cart</span>
           </button>
         </div>
-        
-        {/* Cart Summary */}
+
         <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <ShoppingCart className="text-blue-600" size={24} />
@@ -705,20 +740,18 @@ const CartController = () => {
           <div className="text-xl font-bold text-blue-700">
             Total: {formatPrice(cartTotal)}
           </div>
-          {/* Add debug button in development mode */}
           {process.env.NODE_ENV === 'development' && (
-            <button 
-              onClick={debugCartAndProducts} 
+            <button
+              onClick={debugCartAndProducts}
               className="text-xs text-gray-400 hover:text-gray-600"
             >
               Debug
             </button>
           )}
         </div>
-        
-        {/* Item Form */}
+
         {showForm && (
-          <div 
+          <div
             className={`bg-gray-100 rounded-lg p-6 mb-6 border-l-4 border-blue-600 
                       transition-all duration-500 transform ${formAnimation === 'animate-fade-in' ? 'scale-100 opacity-100' : 
                       formAnimation === 'animate-fade-out' ? 'scale-95 opacity-0' : ''}`}
@@ -727,8 +760,8 @@ const CartController = () => {
             }}
           >
             <h2 className="text-xl font-semibold mb-4 flex items-center">
-              {editingId ? 
-                <><Edit className="mr-2 text-blue-600" size={20} /> Edit Cart Item</> : 
+              {editingId ?
+                <><Edit className="mr-2 text-blue-600" size={20} /> Edit Cart Item</> :
                 <><PlusCircle className="mr-2 text-green-600" size={20} /> Add Item to Cart</>
               }
             </h2>
@@ -800,9 +833,8 @@ const CartController = () => {
             </form>
           </div>
         )}
-        
-        {/* Cart Items Table */}
-        <div 
+
+        <div
           className={`overflow-x-auto rounded-lg transition-all duration-500 
                     ${tableAnimation ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'}`}
           style={{
@@ -824,9 +856,9 @@ const CartController = () => {
             </thead>
             <tbody>
               {cartItems.map((item, index) => (
-                <tr 
-                  key={item.cartItemId} 
-                  className={`transition-all duration-300 ${hoveredRow === item.cartItemId ? 'bg-blue-50 scale-100 shadow-md' : 
+                <tr
+                  key={item.cartItemId}
+                  className={`transition-all duration-300 ${hoveredRow === item.cartItemId ? 'bg-blue-50 scale-100 shadow-md' :
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                   onMouseEnter={() => setHoveredRow(item.cartItemId)}
                   onMouseLeave={() => setHoveredRow(null)}
@@ -839,8 +871,8 @@ const CartController = () => {
                   <td className="px-4 py-3 text-sm text-gray-700 font-medium">{item.productName}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      item.category === 'Electronics' ? 'bg-purple-100 text-purple-800' : 
-                      item.category === 'Footwear' ? 'bg-blue-100 text-blue-800' : 
+                      item.category === 'Electronics' ? 'bg-purple-100 text-purple-800' :
+                      item.category === 'Footwear' ? 'bg-blue-100 text-blue-800' :
                       item.category === 'Home Appliances' ? 'bg-green-100 text-green-800' :
                       'bg-orange-100 text-orange-800'
                     }`}>
@@ -900,8 +932,7 @@ const CartController = () => {
             </tbody>
           </table>
         </div>
-        
-        {/* Next Button - Added */}
+
         <div className="mt-6 flex justify-end">
           <button
             onClick={handleProceedToNext}
@@ -917,28 +948,44 @@ const CartController = () => {
             <ArrowRight size={20} />
           </button>
         </div>
+
+        {cartItems.length > 0 && (
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={handleProceedToNext}
+              className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-all duration-300 
+                       transform hover:scale-105 hover:shadow-lg flex items-center gap-2"
+              style={{
+                background: "linear-gradient(45deg, #047857, #10B981)",
+                boxShadow: "0 4px 14px 0 rgba(16, 185, 129, 0.39)"
+              }}
+            >
+              <ArrowRight size={20} />
+              <span>Proceed to Checkout</span>
+            </button>
+          </div>
+        )}
       </div>
-      
-      {/* Fix: Replace style jsx with regular style tag */}
-      <style dangerouslySetInnerHTML={{__html: `
+
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .animate-fade-in {
           animation: fadeIn 0.3s ease-out forwards;
         }
-        
+
         .animate-fade-out {
           animation: fadeOut 0.3s ease-out forwards;
         }
-        
+
         @keyframes fadeOut {
           from { opacity: 1; transform: scale(1); }
           to { opacity: 0; transform: scale(0.95); }
         }
-      `}}/>
+      ` }} />
     </div>
   );
 };
