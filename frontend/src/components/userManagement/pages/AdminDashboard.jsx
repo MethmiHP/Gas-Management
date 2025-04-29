@@ -374,7 +374,7 @@ const AdminDashboard = () => {
     doc.text(`Type: ${order.orderType}`, 20, 80);
     doc.text(`Payment Method: ${order.paymentMethod}`, 20, 90);
     doc.text(`Payment Status: ${order.paymentStatus}`, 20, 100);
-    doc.text(`Amount: $${order.amount ? order.amount.toFixed(2) : '0.00'}`, 20, 110);
+    doc.text(`Amount: LKR ${order.amount ? order.amount.toFixed(2) : '0.00'}`, 20, 110);
     
     // Add company footer
     const pageHeight = doc.internal.pageSize.height;
@@ -460,7 +460,7 @@ const AdminDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm opacity-80">Total Revenue</p>
-            <h3 className="text-3xl font-bold">${stats.totalRevenue.toFixed(2)}</h3>
+            <h3 className="text-3xl font-bold">LKR {stats.totalRevenue.toFixed(2)}</h3>
           </div>
           <div className="bg-green-400 bg-opacity-30 p-3 rounded-full">
             <FiShoppingBag size={24} />
@@ -715,7 +715,7 @@ const AdminDashboard = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${order.amount ? order.amount.toFixed(2) : '0.00'}
+                    LKR {order.amount ? order.amount.toFixed(2) : '0.00'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button 
