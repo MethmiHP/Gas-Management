@@ -125,177 +125,203 @@ Generated on: ${new Date().toLocaleString()}
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto py-8 px-4">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {/* Header */}
-          <div className="mb-8 flex items-center">
-            <BarChart3 className="h-8 w-8 mr-3 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-800">Financial Report Generator</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50">
+      <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-8">
+            <div className="flex items-center space-x-4">
+              <BarChart3 className="h-10 w-10" />
+              <div>
+                <h1 className="text-3xl font-bold">Financial Report Generator</h1>
+                <p className="mt-2 text-blue-100">Generate detailed profit and loss reports for your business</p>
+              </div>
+            </div>
           </div>
 
-          {/* Report Type Selection */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-4 mb-2">
-              <h2 className="font-medium text-gray-700">Report Type:</h2>
-              <div className="flex space-x-4">
-                <label className="flex items-center cursor-pointer">
+          <div className="p-6 lg:p-8">
+            {/* Report Type Selection */}
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">Select Report Type</h2>
+              <div className="flex space-x-6">
+                <label className="relative flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="radio"
                     name="reportType"
                     value="dateRange"
                     checked={reportType === 'dateRange'}
                     onChange={() => setReportType('dateRange')}
-                    className="mr-2"
+                    className="form-radio h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
-                  <span>Date Range</span>
+                  <span className="text-gray-700 group-hover:text-blue-600 transition-colors">Date Range</span>
                 </label>
-                <label className="flex items-center cursor-pointer">
+                <label className="relative flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="radio"
                     name="reportType"
                     value="monthYear"
                     checked={reportType === 'monthYear'}
                     onChange={() => setReportType('monthYear')}
-                    className="mr-2"
+                    className="form-radio h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
-                  <span>Month & Year</span>
+                  <span className="text-gray-700 group-hover:text-blue-600 transition-colors">Month & Year</span>
                 </label>
               </div>
             </div>
-          </div>
 
-          {/* Date Range Inputs */}
-          {reportType === 'dateRange' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+            {/* Date Range Inputs */}
+            {reportType === 'dateRange' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Start Date
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="pl-10 block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
                   </div>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="pl-10 block w-full rounded-md border border-gray-200 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    End Date
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="pl-10 block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="pl-10 block w-full rounded-md border border-gray-200 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  />
+            )}
+
+            {/* Month & Year Inputs */}
+            {reportType === 'monthYear' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Month
+                  </label>
+                  <select
+                    value={month}
+                    onChange={(e) => setMonth(e.target.value)}
+                    className="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select Month</option>
+                    {months.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Year
+                  </label>
+                  <select
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    className="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  >
+                    <option value="">Select Year</option>
+                    {years.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Month & Year Inputs */}
-          {reportType === 'monthYear' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Month
-                </label>
-                <select
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  className="block w-full rounded-md border border-gray-200 py-2 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Select Month</option>
-                  {months.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Year
-                </label>
-                <select
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  className="block w-full rounded-md border border-gray-200 py-2 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Select Year</option>
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            )}
+
+            {/* Generate Report Button */}
+            <div className="flex justify-center mb-8">
+              <button
+                onClick={generateReport}
+                disabled={loading}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-75 disabled:cursor-not-allowed transition-all duration-200 ease-in-out transform hover:scale-105"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                    Generating Report...
+                  </>
+                ) : (
+                  'Generate Report'
+                )}
+              </button>
             </div>
-          )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
-
-          {/* Generate Report Button */}
-          <div className="mt-4 mb-8">
-            <button
-              onClick={generateReport}
-              disabled={loading}
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-75"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Report'
-              )}
-            </button>
-          </div>
-
-          {/* Report Results */}
-          {reportData && (
-            <div className="mt-6">
-              <div className="border rounded-lg overflow-hidden">
-                <div className="bg-gray-50 px-6 py-4 border-b">
-                  <h3 className="text-lg font-medium text-gray-900">Profit/Loss Report</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+            {/* Report Results */}
+            {reportData && (
+              <div className="mt-8 bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-xl font-semibold text-gray-900">Financial Report Summary</h3>
+                  <p className="mt-1 text-sm text-gray-600">
                     {reportType === 'dateRange'
                       ? `Period: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
                       : `Period: ${months.find(m => m.value === month)?.name} ${year}`}
                   </p>
                 </div>
-                <div className="px-6 py-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <p className="text-sm text-blue-600 font-medium">Total Orders</p>
-                      <p className="text-2xl font-bold">{reportData.totalOrders}</p>
+                
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:border-blue-500 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <BarChart3 className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                      <p className="mt-4 text-3xl font-bold text-gray-900">{reportData.totalOrders}</p>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm text-green-600 font-medium">Total Revenue</p>
-                      <p className="text-2xl font-bold">${reportData.totalRevenue.toFixed(2)}</p>
+                    
+                    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:border-green-500 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                          <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-3xl font-bold text-gray-900">LKR {reportData.totalRevenue.toFixed(2)}</p>
                     </div>
                   </div>
                   
                   <div className="mt-6 flex justify-end">
                     <button
                       onClick={exportReport}
-                      className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                     >
                       <ArrowDownToLine className="mr-2 h-4 w-4" />
                       Export Report
@@ -303,8 +329,8 @@ Generated on: ${new Date().toLocaleString()}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

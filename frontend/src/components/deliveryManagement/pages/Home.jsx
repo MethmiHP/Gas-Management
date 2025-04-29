@@ -28,6 +28,13 @@ export default function HomePage() {
     navigate('/login');
   };
 
+  const scrollToAbout = (e) => {
+    e.preventDefault();
+    const aboutSection = document.getElementById('about');
+    aboutSection.scrollIntoView({ behavior: 'smooth' });
+    setIsMenuOpen(false); // Close mobile menu if open
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Navigation Bar */}
@@ -60,7 +67,7 @@ export default function HomePage() {
                 )}
               </div>
               
-              <Link to="/about" className="hover:text-blue-300 transition duration-300">About Us</Link>
+              <Link to="/about" className="hover:text-blue-300 transition duration-300" onClick={scrollToAbout}>About Us</Link>
               <a href="https://wa.me/+94742826688" target="_blank" rel="noopener noreferrer" className="hover:text-blue-300 transition duration-300">Contact</a>
               <Link to="/products" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600">
                 Products
@@ -116,7 +123,7 @@ export default function HomePage() {
                 )}
               </div>
               
-              <Link to="/about" className="py-2 block hover:bg-blue-700 px-3 rounded">About Us</Link>
+              <Link to="/about" className="py-2 block hover:bg-blue-700 px-3 rounded" onClick={scrollToAbout}>About Us</Link>
               <a href="https://wa.me/+94742826688" target="_blank" rel="noopener noreferrer" className="py-2 block hover:bg-blue-700 px-3 rounded">Contact</a>
               <Link to="/cart" className="py-2 block hover:bg-blue-700 px-3 rounded flex ite</a>ms-center">
                 <ShoppingCart className="h-5 w-5 mr-2" /> Cart
@@ -149,7 +156,7 @@ export default function HomePage() {
               <p className="text-xl mb-8">Your trusted partner for industrial and specialty gases, equipment, and accessories.</p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link to="/products" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium text-center transition duration-300">Browse Products</Link>
-                <Link to="/contact" className="bg-transparent hover:bg-blue-800 border border-white text-white px-6 py-3 rounded-md font-medium text-center transition duration-300">Contact Us</Link>
+                <a href="https://wa.me/+94742826688" target="_blank" rel="noopener noreferrer" className="bg-transparent hover:bg-blue-800 border border-white text-white px-6 py-3 rounded-md font-medium text-center transition duration-300">Contact Us</a>
               </div>
             </div>
             <div className="md:w-1/2 flex justify-center">
@@ -261,7 +268,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">Contact our team today to discuss your gas and accessories requirements. We're here to provide the solutions you need.</p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link to="/contact" className="bg-white text-blue-900 hover:bg-gray-100 px-6 py-3 rounded-md font-medium transition duration-300">Contact Us</Link>
+            <a href="https://wa.me/+94742826688" target="_blank" rel="noopener noreferrer" className="bg-white text-blue-900 hover:bg-gray-100 px-6 py-3 rounded-md font-medium transition duration-300">Contact Us</a>
             <Link to="/products" className="bg-transparent hover:bg-blue-800 border border-white px-6 py-3 rounded-md font-medium transition duration-300">Explore Products</Link>
           </div>
         </div>
@@ -300,7 +307,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Company</h3>
               <ul className="space-y-2">
-                <li><Link to="/about" className="hover:text-white">About Us</Link></li>
+                <li><Link to="/about" className="hover:text-white" onClick={scrollToAbout}>About Us</Link></li>
                 <li><Link to="/careers" className="hover:text-white">Careers</Link></li>
                 <li><Link to="/blog" className="hover:text-white">Blog</Link></li>
                 <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
