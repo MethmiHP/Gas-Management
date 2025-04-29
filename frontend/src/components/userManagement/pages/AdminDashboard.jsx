@@ -71,14 +71,6 @@ const AdminDashboard = () => {
     role: 'customer'
   });
 
-  // Add new state for real-time updates
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-
-  // Add new state for deliveries
-  const [deliveries, setDeliveries] = useState([]);
-  const [deliveriesLoading, setDeliveriesLoading] = useState(false);
-  const [deliveryError, setDeliveryError] = useState(null);
-
   useEffect(() => {
     // Fetch admin data and dashboard stats
     const fetchAdminData = async () => {
@@ -114,77 +106,33 @@ const AdminDashboard = () => {
     // will handle data fetching internally
   }, [activeTab]);
 
-  // Function to fetch recent deliveries
-  const fetchRecentDeliveries = async () => {
-    try {
-      setDeliveriesLoading(true);
-      setDeliveryError(null);
-      
-      const response = await axios.get('http://localhost:5000/api/deliveries');
-      
-      if (response.data && response.data.success) {
-        setDeliveries(response.data.data);
-        
-        // Calculate recent deliveries (last 7 days)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        const recentDeliveryCount = response.data.data.filter(delivery => {
-          const deliveryDate = new Date(delivery.updatedAt || delivery.createdAt);
-          return (
-            delivery.status === 'Delivered' && 
-            deliveryDate >= sevenDaysAgo
-          );
-        }).length;
-
-        // Update stats with new delivery count
-        setStats(prevStats => ({
-          ...prevStats,
-          recentDeliveries: recentDeliveryCount
-        }));
-
-        // Update last update timestamp
-        setLastUpdate(new Date());
-      }
-    } catch (error) {
-      console.error('Error fetching deliveries:', error);
-      setDeliveryError('Failed to load deliveries. Please try again.');
-    } finally {
-      setDeliveriesLoading(false);
-    }
-  };
-
-  // Modify the fetchOrders function to not update recent deliveries
+  // Fetch all orders from the API
   const fetchOrders = async () => {
     try {
       setOrdersLoading(true);
       setOrderError(null);
       
+      // Use the correct endpoint with /api prefix
       const response = await axios.get('http://localhost:5000/api/orders');
       
       if (response.data && response.data.success) {
         setOrders(response.data.data);
         
-        // Calculate pending orders
+        // Update stats
         const pendingCount = response.data.data.filter(order => 
-          order.paymentStatus === 'Pending' || order.status === 'Processing'
-        ).length;
+          order.paymentStatus === 'Pending' || order.status === 'Processing').length;
         
-        // Calculate total revenue from completed orders
-        const totalRev = response.data.data.reduce((sum, order) => {
-          if (order.paymentStatus === 'Completed' && order.amount) {
-            return sum + parseFloat(order.amount);
-          }
-          return sum;
-        }, 0);
+        const totalRev = response.data.data.reduce((sum, order) => 
+          order.paymentStatus === 'Paid' ? sum + (order.amount || 0) : sum, 0);
         
-        // Update stats without changing recentDeliveries
-        setStats(prevStats => ({
-          ...prevStats,
+        setStats({
           totalOrders: response.data.data.length,
           pendingOrders: pendingCount,
-          totalRevenue: totalRev
-        }));
+          totalRevenue: totalRev,
+          recentDeliveries: response.data.data.filter(order => 
+            order.status === 'Delivered' && 
+            new Date(order.updatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length
+        });
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -193,23 +141,6 @@ const AdminDashboard = () => {
       setOrdersLoading(false);
     }
   };
-
-  // Modify the auto-refresh effect to include deliveries
-  useEffect(() => {
-    // Initial fetch
-    fetchOrders();
-    fetchRecentDeliveries();
-
-    // Set up auto-refresh interval (every 5 minutes)
-    const ordersInterval = setInterval(fetchOrders, 5 * 60 * 1000);
-    const deliveriesInterval = setInterval(fetchRecentDeliveries, 5 * 60 * 1000);
-
-    // Cleanup intervals on component unmount
-    return () => {
-      clearInterval(ordersInterval);
-      clearInterval(deliveriesInterval);
-    };
-  }, []);
 
   // Fetch all users from the API
   const fetchUsers = async () => {
@@ -525,27 +456,19 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white relative group">
+      <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm opacity-80">Total Revenue</p>
-            {/* <h3 className="text-3xl font-bold">LKR {stats.totalRevenue.toFixed(2)}</h3> */}
-            <h3 className="text-3xl font-bold">LKR 200000</h3>
+            <h3 className="text-3xl font-bold">LKR {stats.totalRevenue.toFixed(2)}</h3>
           </div>
           <div className="bg-green-400 bg-opacity-30 p-3 rounded-full">
-            <FiDollarSign size={24} />
+            <FiShoppingBag size={24} />
           </div>
         </div>
         <div className="mt-4 text-xs opacity-80">
           <span className="font-medium">From completed orders</span>
         </div>
-        <button 
-          onClick={() => fetchOrders()} 
-          className="absolute top-2 right-2 p-1 rounded-full bg-white bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 opacity-0 group-hover:opacity-100"
-          title="Refresh data"
-        >
-          <FiRefreshCw size={16} />
-        </button>
       </div>
 
       <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
@@ -563,12 +486,11 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white relative group">
+      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm opacity-80">Recent Deliveries</p>
-            {/* <h3 className="text-3xl font-bold">{stats.recentDeliveries}</h3> */}
-            <h3 className="text-3xl font-bold">5</h3>
+            <h3 className="text-3xl font-bold">{stats.recentDeliveries}</h3>
           </div>
           <div className="bg-amber-400 bg-opacity-30 p-3 rounded-full">
             <FiTruck size={24} />
@@ -576,17 +498,7 @@ const AdminDashboard = () => {
         </div>
         <div className="mt-4 text-xs opacity-80">
           <span className="font-medium">Last 7 days</span>
-          <span className="ml-2 text-xs opacity-60">
-            (Updated: {lastUpdate.toLocaleTimeString()})
-          </span>
         </div>
-        <button 
-          onClick={() => fetchRecentDeliveries()} 
-          className="absolute top-2 right-2 p-1 rounded-full bg-white bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 opacity-0 group-hover:opacity-100"
-          title="Refresh data"
-        >
-          <FiRefreshCw size={16} />
-        </button>
       </div>
 
       {/* Quick actions */}
