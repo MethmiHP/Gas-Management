@@ -226,8 +226,8 @@ const ProductAnalyticsReport = () => {
       doc.setTextColor(50);
       doc.text(`• Total Unique Products: ${totalProductCount}`, 20, y); y += 6;
       doc.text(`• Total Units in Stock: ${products.reduce((sum, p) => sum + p.quantity, 0)}`, 20, y); y += 6;
-      doc.text(`• Total Inventory Value: $${products.reduce((sum, p) => sum + p.price * p.quantity, 0).toFixed(2)}`, 20, y); y += 6;
-      doc.text(`• Average Product Price: $${avgProductPrice.toFixed(2)}`, 20, y); y += 6;
+      doc.text(`• Total Inventory Value: LKR ${products.reduce((sum, p) => sum + p.price * p.quantity, 0).toFixed(2)}`, 20, y); y += 6;
+      doc.text(`• Average Product Price: LKR ${avgProductPrice.toFixed(2)}`, 20, y); y += 6;
       doc.text(`• Products Low on Stock (<= ${stockThreshold}): ${lowStockProducts.length}`, 20, y); y += 6;
       doc.text(`• Products Out of Stock: ${outOfStockProducts.length}`, 20, y); y += 8;
 
@@ -315,7 +315,7 @@ const ProductAnalyticsReport = () => {
       
       if (totalRevenueByType && totalRevenueByType.length > 0) {
           if (y + 30 > pageHeight) { doc.addPage(); y = 20; }
-          y = addTable('Financial Overview by Type', [['Type', 'Total Revenue']], totalRevenueByType.map(t => [t.type, `$${t.revenue.toFixed(2)}`]), y, 'grid', [153, 102, 255]);
+          y = addTable('Financial Overview by Type', [['Type', 'Total Revenue']], totalRevenueByType.map(t => [t.type, `LKR ${t.revenue.toFixed(2)}`]), y, 'grid', [153, 102, 255]);
       }
       
       if (mostSoldProducts && mostSoldProducts.length > 0) {
@@ -325,7 +325,7 @@ const ProductAnalyticsReport = () => {
       
       if (mostProfitableProducts && mostProfitableProducts.length > 0) {
           if (y + 40 > pageHeight) { doc.addPage(); y = 20; }
-          y = addTable('Top 5 Most Profitable Products', [['Product Name', 'Total Value']], mostProfitableProducts.map(p => [p.name, `$${(p.price * p.quantity).toFixed(2)}`]), y, 'plain', [80, 80, 80]);
+          y = addTable('Top 5 Most Profitable Products', [['Product Name', 'Total Value']], mostProfitableProducts.map(p => [p.name, `LKR ${(p.price * p.quantity).toFixed(2)}`]), y, 'plain', [80, 80, 80]);
       }
       
       if (lowStockProducts && lowStockProducts.length > 0) {
@@ -391,8 +391,8 @@ const ProductAnalyticsReport = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <h3 className="font-semibold text-lg mb-2 text-gray-700">Financial Summary</h3>
            <ul className="text-sm space-y-1 text-gray-600">
-             <li>Total Inventory Value: <span className="font-medium text-green-700">${products.reduce((sum, p) => sum + p.price * p.quantity, 0).toFixed(2)}</span></li>
-             <li>Avg. Product Price: <span className="font-medium text-gray-800">${avgProductPrice.toFixed(2)}</span></li>
+             <li>Total Inventory Value: <span className="font-medium text-green-700">LKR {products.reduce((sum, p) => sum + p.price * p.quantity, 0).toFixed(2)}</span></li>
+             <li>Avg. Product Price: <span className="font-medium text-gray-800">LKR {avgProductPrice.toFixed(2)}</span></li>
            </ul>
         </div>
         {/* Add more preview cards if desired */}
