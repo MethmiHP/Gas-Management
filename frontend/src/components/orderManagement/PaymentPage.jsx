@@ -7,6 +7,22 @@ import { Link } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:5000';
 
+const detectCardType = (cardNumber) => {
+  const cleanNumber = cardNumber.replace(/\s+/g, '');
+  
+  if (/^4[0-9]{12}(?:[0-9]{3})?$/.test(cleanNumber)) {
+    return 'visa';
+  }
+  if (/^5[1-5][0-9]{14}$/.test(cleanNumber)) {
+    return 'mastercard';
+  }
+  if (/^3[47][0-9]{13}$/.test(cleanNumber)) {
+    return 'amex';
+  }
+  
+  return 'unknown';
+};
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -29,6 +45,7 @@ const PaymentPage = () => {
   const [cartTotal, setCartTotal] = useState(0);
   const [deliveryDetails, setDeliveryDetails] = useState(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [cardType, setCardType] = useState('unknown');
 
   useEffect(() => {
     const total = localStorage.getItem('cartTotal') || 0;
@@ -43,6 +60,13 @@ const PaymentPage = () => {
       setShowLoginPrompt(true);
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const total = localStorage.getItem('cartTotal');
+    if (total) {
+      setCartTotal(parseFloat(total));
+    }
+  }, []);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -91,6 +115,7 @@ const PaymentPage = () => {
 
     if (name === 'cardNumber') {
       processedValue = formatCardNumber(value);
+      setCardType(detectCardType(processedValue));
     }
 
     if (name === 'expiryDate') {
@@ -139,13 +164,16 @@ const PaymentPage = () => {
 
       const orderId = localStorage.getItem('pendingOrderId');
 
+      // Determine payment status based on payment method
+      const paymentStatus = paymentMethod === 'cod' ? 'Pending' : 'Completed';
+
       const paymentData = {
         orderId: orderId,
         amount: cartTotal,
         paymentMethod: paymentMethod === 'cod' ? 'Cash On Delivery' : 'Credit Card',
         deliveryId: localStorage.getItem('deliveryId') || '',
         customerName: deliveryDetails?.customerName || '',
-        status: paymentMethod === 'cod' ? 'Pending' : 'Completed',
+        status: paymentStatus,
         cardDetails: paymentMethod === 'visa' ? {
           last4: cardDetails.cardNumber.slice(-4),
           expiryDate: cardDetails.expiryDate
@@ -160,9 +188,11 @@ const PaymentPage = () => {
 
       if (orderId && !orderId.startsWith('local-')) {
         try {
+          // Update order with correct payment status
           await axios.put(`${API_BASE_URL}/orders/${orderId}`, {
             paymentMethod: paymentData.paymentMethod,
-            paymentStatus: paymentData.status
+            paymentStatus: paymentStatus,
+            orderStatus: paymentStatus
           });
         } catch (updateError) {
           console.warn('Error updating order payment details:', updateError);
@@ -209,12 +239,10 @@ const PaymentPage = () => {
         confirmationId,
         date: new Date().toISOString(),
         amount: cartTotal,
-        paymentMethod: paymentData.paymentMethod
+        paymentMethod: paymentData.paymentMethod,
+        paymentStatus: paymentStatus
       }));
 
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
     } catch (err) {
       console.error('Payment processing error:', err);
 
@@ -227,9 +255,6 @@ const PaymentPage = () => {
       localStorage.removeItem('deliveryDetails'); 
       localStorage.removeItem('deliveryId');
 
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
     } finally {
       setLoading(false);
     }
@@ -290,24 +315,63 @@ const PaymentPage = () => {
     return `${baseClasses} border-green-500 bg-green-50`;
   };
 
+  const CardIcon = ({ type }) => {
+    switch (type) {
+      case 'visa':
+        return (
+          <div className="flex items-center">
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H22C23.1 20 24 19.1 24 18V6C24 4.9 23.1 4 22 4Z" fill="#1A1F71"/>
+              <path d="M22 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H22C23.1 20 24 19.1 24 18V6C24 4.9 23.1 4 22 4Z" fill="#1A1F71"/>
+              <path d="M9.5 14.5L7.5 9.5H9.5L10.5 12.5L11.5 9.5H13.5L11.5 14.5H9.5Z" fill="white"/>
+              <path d="M16.5 14.5H14.5L13.5 9.5H15.5L16 12.5L16.5 9.5H18.5L19 12.5L19.5 9.5H21.5L20.5 14.5H18.5L18 12.5L17.5 14.5H16.5Z" fill="white"/>
+            </svg>
+          </div>
+        );
+      case 'mastercard':
+        return (
+          <div className="flex items-center">
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H22C23.1 20 24 19.1 24 18V6C24 4.9 23.1 4 22 4Z" fill="#EB001B"/>
+              <path d="M22 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H22C23.1 20 24 19.1 24 18V6C24 4.9 23.1 4 22 4Z" fill="#F79E1B"/>
+              <path d="M12 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H12V4Z" fill="#FF5F00"/>
+            </svg>
+          </div>
+        );
+      case 'amex':
+        return (
+          <div className="flex items-center">
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H22C23.1 20 24 19.1 24 18V6C24 4.9 23.1 4 22 4Z" fill="#006FCF"/>
+              <path d="M12 4H2C0.9 4 0 4.9 0 6V18C0 19.1 0.9 20 2 20H12V4Z" fill="#006FCF"/>
+              <path d="M9.5 14.5L7.5 9.5H9.5L10.5 12.5L11.5 9.5H13.5L11.5 14.5H9.5Z" fill="white"/>
+              <path d="M16.5 14.5H14.5L13.5 9.5H15.5L16 12.5L16.5 9.5H18.5L19 12.5L19.5 9.5H21.5L20.5 14.5H18.5L18 12.5L17.5 14.5H16.5Z" fill="white"/>
+            </svg>
+          </div>
+        );
+      default:
+        return <CreditCard size={24} className="text-gray-500" />;
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {showLoginPrompt && !isAuthenticated && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
           <h3 className="text-lg font-medium text-blue-800 mb-2">Complete your purchase</h3>
           <p className="mb-4 text-blue-700">
             Creating an account or logging in will allow you to track your orders and save your information for next time.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link to="/login" state={{ from: '/payment' }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            <Link to="/login" state={{ from: '/payment' }} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded hover:from-blue-700 hover:to-indigo-700 transition-all duration-300">
               Log In
             </Link>
-            <Link to="/register" state={{ from: '/payment' }} className="px-4 py-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200">
+            <Link to="/register" state={{ from: '/payment' }} className="px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded hover:from-blue-200 hover:to-indigo-200 transition-all duration-300">
               Create Account
             </Link>
             <button 
               onClick={() => setShowLoginPrompt(false)} 
-              className="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+              className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 rounded hover:from-gray-200 hover:to-gray-300 transition-all duration-300"
             >
               Continue as Guest
             </button>
@@ -315,80 +379,100 @@ const PaymentPage = () => {
         </div>
       )}
 
-      <h1 className="text-3xl font-bold mb-6">Review & Payment</h1>
+      <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Review & Payment</h1>
 
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <p className="text-lg">Processing payment...</p>
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-center">Processing payment...</p>
           </div>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-          <div className="flex items-center mb-2">
-            <Check size={24} className="mr-2" />
-            <span className="block sm:inline font-medium text-lg">Payment successful!</span>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-500 scale-100">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <Check size={32} className="text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                {paymentMethod === 'cod' ? 'Order Placed Successfully!' : 'Payment Successful!'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {paymentMethod === 'cod' 
+                  ? 'Thank you for your order. You will pay when your order arrives.'
+                  : 'Thank you for your order. Your transaction has been completed successfully.'}
+              </p>
+              <div className="w-full bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-4 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-gray-600">Order Amount:</span>
+                  <span className="font-semibold text-gray-800">LKR {cartTotal > 0 ? cartTotal.toFixed(2) : '0.00'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Payment Method:</span>
+                  <span className="font-semibold text-gray-800">{paymentMethod === 'cod' ? 'Cash on Delivery' : 'Credit Card'}</span>
+                </div>
+              </div>
+              <div className="flex flex-col w-full gap-3">
+                <button 
+                  onClick={() => navigate('/')} 
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-300"
+                >
+                  Return to Home
+                </button>
+              </div>
+            </div>
           </div>
-          <p className="mb-2">Thank you for your order. Your transaction has been completed.</p>
-          <p>You will be redirected to the home page in 3 seconds or <button 
-              onClick={() => navigate('/')} 
-              className="text-blue-600 font-medium underline"
-            >
-              click here
-            </button> to go now.
-          </p>
         </div>
       )}
 
       {error && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+        <div className="mb-4 bg-gradient-to-r from-red-100 to-pink-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg">
           <span className="block sm:inline">{error}</span>
           <span 
             className="absolute top-0 bottom-0 right-0 px-4 py-3"
             onClick={clearError}
           >
-            <X size={16} className="cursor-pointer" />
+            <X size={16} className="cursor-pointer hover:text-red-800 transition-colors duration-300" />
           </span>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-lg p-6 transform transition-all duration-500 hover:shadow-xl">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800 relative inline-block">
+      <div className="bg-white rounded-lg shadow-lg p-8 transform transition-all duration-500 hover:shadow-xl border border-gray-100">
+        <h1 className="text-2xl font-bold mb-8 text-gray-800 relative inline-block">
           Select Payment Method
-          <span className="absolute bottom-0 left-0 w-full h-1 bg-blue-600"></span>
+          <span className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-600"></span>
         </h1>
 
-        <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-semibold mb-2">Order Summary</h2>
-          <div className="flex justify-between mb-1">
-            <span>Subtotal:</span>
-            <span>${cartTotal.toFixed(2)}</span>
+        <div className="mb-8 bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-lg border border-gray-200">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Order Summary</h2>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="font-medium">LKR {cartTotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between mb-1">
-            <span>Delivery Fee:</span>
-            <span>$0.00</span>
-          </div>
-          <div className="h-px bg-gray-200 my-2"></div>
-          <div className="flex justify-between font-bold">
-            <span>Total:</span>
-            <span>${cartTotal.toFixed(2)}</span>
+          <div className="h-px bg-gradient-to-r from-gray-200 to-blue-200 my-3"></div>
+          <div className="flex justify-between font-bold text-lg">
+            <span className="text-gray-800">Total:</span>
+            <span className="text-blue-600">LKR {cartTotal.toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-4">Payment Method</h2>
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-6 text-gray-800">Payment Method</h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div 
-              className={`border rounded-lg p-4 cursor-pointer transition-all duration-300 ${
-                paymentMethod === 'cod' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+              className={`border-2 rounded-xl p-6 cursor-pointer transition-all duration-300 ${
+                paymentMethod === 'cod' 
+                  ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md' 
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
               }`}
               onClick={() => handlePaymentMethodChange('cod')}
             >
               <div className="flex items-center">
-                <div className={`w-6 h-6 rounded-full border flex items-center justify-center mr-3 ${
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-3 ${
                   paymentMethod === 'cod' ? 'border-blue-500' : 'border-gray-400'
                 }`}>
                   {paymentMethod === 'cod' && (
@@ -400,17 +484,19 @@ const PaymentPage = () => {
                   <span className="ml-2 font-medium">Cash on Delivery</span>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-2 ml-9">Pay when your order arrives</p>
+              <p className="text-sm text-gray-500 mt-3 ml-9">Pay when your order arrives</p>
             </div>
 
             <div 
-              className={`border rounded-lg p-4 cursor-pointer transition-all duration-300 ${
-                paymentMethod === 'visa' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+              className={`border-2 rounded-xl p-6 cursor-pointer transition-all duration-300 ${
+                paymentMethod === 'visa' 
+                  ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-md' 
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
               }`}
               onClick={() => handlePaymentMethodChange('visa')}
             >
               <div className="flex items-center">
-                <div className={`w-6 h-6 rounded-full border flex items-center justify-center mr-3 ${
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-3 ${
                   paymentMethod === 'visa' ? 'border-blue-500' : 'border-gray-400'
                 }`}>
                   {paymentMethod === 'visa' && (
@@ -418,22 +504,22 @@ const PaymentPage = () => {
                   )}
                 </div>
                 <div className="flex items-center">
-                  <CreditCard size={24} className={paymentMethod === 'visa' ? 'text-blue-500' : 'text-gray-500'} />
+                  <CardIcon type={cardType} />
                   <span className="ml-2 font-medium">Credit/Debit Card</span>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-2 ml-9">Visa, Mastercard, etc.</p>
+              <p className="text-sm text-gray-500 mt-3 ml-9">Visa, Mastercard, etc.</p>
             </div>
           </div>
         </div>
 
         {paymentMethod === 'visa' && (
-          <div className="mb-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <h3 className="text-lg font-semibold mb-4">Enter Card Details</h3>
+          <div className="mb-8 border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-r from-gray-50 to-blue-50">
+            <h3 className="text-lg font-semibold mb-6 text-gray-800">Enter Card Details</h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -442,35 +528,35 @@ const PaymentPage = () => {
                     onChange={handleInputChange}
                     placeholder="1234 5678 9012 3456"
                     maxLength="19"
-                    className={getInputClass('cardNumber')}
+                    className={`${getInputClass('cardNumber')} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300`}
                   />
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <span className="text-blue-600 font-bold">VISA</span>
+                    <CardIcon type={cardType} />
                   </div>
                 </div>
                 {validationErrors.cardNumber && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.cardNumber}</p>
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.cardNumber}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Card Holder Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Card Holder Name</label>
                 <input
                   type="text"
                   name="cardHolder"
                   value={cardDetails.cardHolder}
                   onChange={handleInputChange}
                   placeholder="John Doe"
-                  className={getInputClass('cardHolder')}
+                  className={`${getInputClass('cardHolder')} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300`}
                 />
                 {validationErrors.cardHolder && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.cardHolder}</p>
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.cardHolder}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
                   <input
                     type="text"
                     name="expiryDate"
@@ -478,14 +564,14 @@ const PaymentPage = () => {
                     onChange={handleInputChange}
                     placeholder="MM/YY"
                     maxLength="5"
-                    className={getInputClass('expiryDate')}
+                    className={`${getInputClass('expiryDate')} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300`}
                   />
                   {validationErrors.expiryDate && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.expiryDate}</p>
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.expiryDate}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
                   <input
                     type="text"
                     name="cvv"
@@ -493,10 +579,10 @@ const PaymentPage = () => {
                     onChange={handleInputChange}
                     placeholder="123"
                     maxLength="4"
-                    className={getInputClass('cvv')}
+                    className={`${getInputClass('cvv')} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300`}
                   />
                   {validationErrors.cvv && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.cvv}</p>
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.cvv}</p>
                   )}
                 </div>
               </div>
@@ -504,22 +590,22 @@ const PaymentPage = () => {
           </div>
         )}
 
-        <div className="mt-6">
+        <div className="mt-8">
           <button
             onClick={handleSubmit}
             disabled={loading || success}
-            className="w-full bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 
-                     transition-all duration-300 font-medium flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 
+                     transition-all duration-300 font-medium flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
                 Processing...
               </>
             ) : (
               <>
                 {paymentMethod === 'cod' ? 'Confirm Cash on Delivery' : 'Pay Now'}
-                <span className="font-bold">${cartTotal.toFixed(2)}</span>
+                <span className="font-bold">LKR {cartTotal.toFixed(2)}</span>
               </>
             )}
           </button>
