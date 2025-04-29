@@ -37,6 +37,7 @@ import ProtectedRoute from './components/userManagement/ProtectedRoute';
 import { AuthProvider } from './components/userManagement/context/AuthContext';
 import OrderDetailsPage from './components/orderManagement/OrderDetailsPage'; // Add this import
 import DeliveryProgress from './components/deliveryManagement/pages/DeliveryProgressTracker';
+import Profit from './components/orderManagement/ProfitLossPage';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -79,6 +80,7 @@ function App() {
             
             {/* User management routes outside of Layout */}
             <Route path="/progress" element={<DeliveryProgress />} /> 
+            <Route path="/profit" element={<Profit />} /> 
             <Route path="/track" element={<TrackingOrder />} />
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
