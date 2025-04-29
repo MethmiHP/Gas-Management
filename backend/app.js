@@ -8,6 +8,7 @@ const mongoose = require("mongoose"); // A library for interacting with MongoDB
 const cors = require("cors"); // Middleware to handle cross-origin resource sharing
 
 // Importing route definitions
+const profitLossRoutes = require("./routes/financeRoutes");
 //const userRoutes = require("./routes/userRoute");
 const driverRoutes = require("./routes/driverRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
@@ -36,6 +37,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes); // Add order routes with /api prefix
+app.use("/api", profitLossRoutes);
 
 // Connecting to MongoDB
 mongoose
