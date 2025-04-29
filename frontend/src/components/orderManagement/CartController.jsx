@@ -668,7 +668,7 @@ const CartController = () => {
   };
 
   const formatPrice = (price) => {
-    return `$${price.toFixed(2)}`;
+    return `LKR ${price.toFixed(2)}`;
   };
 
   const clearError = () => {
@@ -740,14 +740,14 @@ const CartController = () => {
           <div className="text-xl font-bold text-blue-700">
             Total: {formatPrice(cartTotal)}
           </div>
-          {process.env.NODE_ENV === 'development' && (
+          {/* {process.env.NODE_ENV === 'development' && (
             <button
               onClick={debugCartAndProducts}
               className="text-xs text-gray-400 hover:text-gray-600"
             >
               Debug
-            </button>
-          )}
+            </button> */}
+          {/* )} */}
         </div>
 
         {showForm && (
@@ -932,7 +932,7 @@ const CartController = () => {
             </tbody>
           </table>
         </div>
-
+{/* 
         <div className="mt-6 flex justify-end">
           <button
             onClick={handleProceedToNext}
@@ -947,16 +947,16 @@ const CartController = () => {
             <span className="font-medium">Proceed</span>
             <ArrowRight size={20} />
           </button>
-        </div>
+        </div> */}
 
         {cartItems.length > 0 && (
           <div className="mt-6 flex justify-end">
             <button
               onClick={handleProceedToNext}
-              className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-all duration-300 
-                       transform hover:scale-105 hover:shadow-lg flex items-center gap-2"
+              className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-all duration-300 
+                     transform hover:scale-105 hover:shadow-lg flex items-center gap-2"
               style={{
-                background: "linear-gradient(45deg, #047857, #10B981)",
+                background: "linear-gradient(45deg, #4F46E5, #60A5FA)",
                 boxShadow: "0 4px 14px 0 rgba(16, 185, 129, 0.39)"
               }}
             >

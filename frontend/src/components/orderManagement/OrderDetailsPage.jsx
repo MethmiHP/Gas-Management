@@ -46,8 +46,7 @@ const OrderDetailsPage = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (amount === undefined || amount === null) return '$0.00';
-    return `$${parseFloat(amount).toFixed(2)}`;
+    return `LKR ${parseFloat(amount).toFixed(2)}`;
   };
 
   const getStatusBadgeClass = (status) => {
