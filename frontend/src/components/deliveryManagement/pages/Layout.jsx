@@ -80,7 +80,7 @@ const Layout = ({ children }) => {
           {/* Navigation */}
           <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
             <Link
-              to="/"
+              to="/dashboard"
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200 ${isActive('/')}`}
             >
               <Home className="mr-3 h-5 w-5" />
@@ -88,7 +88,7 @@ const Layout = ({ children }) => {
             </Link>
             
             <Link
-              to="/deliveries"
+              to="/view-all-deliveries"
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-200 ${isActive('/deliveries')}`}
             >
               <Truck className="mr-3 h-5 w-5" />
