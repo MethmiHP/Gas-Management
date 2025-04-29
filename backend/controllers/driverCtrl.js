@@ -16,26 +16,54 @@ const getAllDrivers = async (req, res) => {
 // Add a new driver
 const addDriver = async (req, res) => {
     const { name, email, phone, licenseNumber } = req.body;
-
+  
     try {
-        // Check if email or license number already exists
-        const existingDriver = await Driver.findOne({ $or: [{ email }, { licenseNumber }] });
-        if (existingDriver) {
-            return res.status(400).json({ message: "Email or license number already exists" });
-        }
-
-        const driver = new Driver({ name, email, phone, licenseNumber });
-        await driver.save();
-        return res.status(201).json({ success: true, message: "Driver added successfully", driver });
+      // Check if email already exists
+      const existingByEmail = await Driver.findOne({ email });
+      if (existingByEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+  
+      // Check if license number already exists
+      const existingByLicense = await Driver.findOne({ licenseNumber });
+      if (existingByLicense) {
+        return res.status(400).json({ message: "License number already exists" });
+      }
+  
+      const driver = new Driver({ name, email, phone, licenseNumber });
+      await driver.save();
+  
+      return res.status(201).json({
+        success: true,
+        message: "Driver added successfully",
+        driver
+      });
     } catch (error) {
-        return res.status(500).json({ message: "Error adding driver", error });
+      console.error("Error adding driver:", error);
+      return res.status(500).json({
+        message: "Internal server error while adding driver",
+        error: error.message
+      });
     }
-};
-
+  };
+  
 // Get driver by ID
 const getDriverById = async (req, res) => {
     try {
         const driver = await Driver.findById(req.params.id);
+        if (!driver) {
+            return res.status(404).json({ message: "Driver not found" });
+        }
+        return res.status(200).json({ driver });
+    } catch (error) {
+        return res.status(500).json({ message: "Error fetching driver", error });
+    }
+};
+
+// Get driver by ID
+const getDriverByEmail = async (req, res) => {
+    try {
+        const driver = await Driver.findOne({ email: req.params.email });
         if (!driver) {
             return res.status(404).json({ message: "Driver not found" });
         }
@@ -85,6 +113,7 @@ module.exports = {
     getAllDrivers,
     addDriver,
     getDriverById,
+    getDriverByEmail,
     updateDriver,
     deleteDriver,
 };

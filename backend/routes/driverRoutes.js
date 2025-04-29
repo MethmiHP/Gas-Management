@@ -10,6 +10,7 @@ const DriverController = require("../controllers/driverCtrl");
 router.get("/", DriverController.getAllDrivers);
 router.post("/", DriverController.addDriver);
 router.get("/:id", DriverController.getDriverById);
+router.get("/email/:email", DriverController.getDriverByEmail);
 router.put("/:id", DriverController.updateDriver);
 router.delete("/:id", DriverController.deleteDriver);
 

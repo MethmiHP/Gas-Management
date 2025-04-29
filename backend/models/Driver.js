@@ -12,10 +12,6 @@ const driverSchema = new Schema({
         required: true,
         unique: true, // Ensure no duplicate emails
     },
-    phone: {
-        type: String,
-        required: true,
-    },
     licenseNumber: {
         type: String,
         required: true,

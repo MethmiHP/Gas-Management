@@ -2338,6 +2338,37 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+// Place this outside the component
+const UserService = {
+  getCurrentUserId: () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      return user?.user?.id || null;
+    } catch (error) {
+      console.error("Error getting user ID:", error);
+      return null;
+    }
+  },
+  getCurrentUsername: () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      return user?.user?.username || null;
+    } catch (error) {
+      console.error("Error getting username:", error);
+      return null;
+    }
+  },
+  getUserEmail: () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      return user?.user?.email || null;
+    } catch (error) {
+      console.error("Error getting email:", error);
+      return null;
+    }
+  }
+};
+
 const DriverDashboard = () => {
   const [deliveries, setDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2349,9 +2380,7 @@ const DriverDashboard = () => {
   const [emptyCollected, setEmptyCollected] = useState(false);
   
   // States for driver selection
-  const [availableDrivers, setAvailableDrivers] = useState([]);
   const [driverId, setDriverId] = useState(null);
-  const [showDriverSelector, setShowDriverSelector] = useState(false);
   
   // New state to track which modal to show
   const [modalType, setModalType] = useState(null); // 'delivery' or 'payment'
@@ -2361,37 +2390,22 @@ const DriverDashboard = () => {
 
   // On first load, check if we have a stored driver ID
   useEffect(() => {
-    const storedDriverId = localStorage.getItem('selectedDriverId');
-    if (storedDriverId) {
-      setDriverId(storedDriverId);
-    } else {
-      // If no stored driver, fetch available drivers and show selector
-      fetchAvailableDrivers();
-      setShowDriverSelector(true);
-    }
+    const fetchDriver = async () => {
+      try {
+        const email = UserService.getUserEmail();
+        const driverResponse = await axios.get(`${API_BASE_URL}/drivers/email/${email}`);
+        if (driverResponse.data?.driver) {
+          setDriverId(driverResponse.data.driver._id);
+          setDriverInfo(driverResponse.data.driver);
+          localStorage.setItem('selectedDriverId', driverResponse.data.driver._id);
+        }
+      } catch (err) {
+        console.error("Error fetching driver on load:", err);
+      }
+    };
+    fetchDriver();
   }, []);
 
-  // Fetch all available drivers
-  const fetchAvailableDrivers = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/drivers`);
-      if (response.data?.drivers && Array.isArray(response.data.drivers)) {
-        setAvailableDrivers(response.data.drivers);
-        if (response.data.drivers.length === 0) {
-          setError("No drivers available in the system. Please add a driver first.");
-        }
-      } else {
-        setError("Couldn't retrieve driver list. Unexpected data format.");
-      }
-    } catch (err) {
-      console.error('Error fetching drivers:', err);
-      setError('Failed to load available drivers. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // When driver ID changes, fetch that driver's data
   useEffect(() => {
     if (driverId) {
       fetchDriverData();
@@ -2404,16 +2418,16 @@ const DriverDashboard = () => {
       setError(null);
       
       console.log(`Fetching driver data for ID: ${driverId}`);
-      
+      const email = UserService.getUserEmail();
       // Fetch driver information
-      const driverResponse = await axios.get(`${API_BASE_URL}/drivers/${driverId}`);
+      const driverResponse = await axios.get(`${API_BASE_URL}/drivers/email/${email}`);
       console.log('Driver API Response:', driverResponse.data);
       
       // Safely set driver info
       if (driverResponse.data?.driver) {
         setDriverInfo(driverResponse.data.driver);
         // Save the selected driver ID
-        localStorage.setItem('selectedDriverId', driverId);
+        localStorage.setItem('selectedDriverId', driverResponse.data?.driver?._id);
       } else {
         console.warn('Driver data not in expected format:', driverResponse.data);
         setDriverInfo(null);
@@ -2448,21 +2462,12 @@ const DriverDashboard = () => {
     }
   };
 
-  // Handle driver selection
-  const handleSelectDriver = (id) => {
-    setDriverId(id);
-    setShowDriverSelector(false);
-  };
-
-  // Clear selected driver and show selector again
-  const handleChangeDriver = () => {
-    localStorage.removeItem('selectedDriverId');
-    setDriverId(null);
-    setDriverInfo(null);
-    setDeliveries([]);
-    fetchAvailableDrivers();
-    setShowDriverSelector(true);
-  };
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    console.log("User logged out, localStorage cleared");
+    window.location.href = '/login';
+  }
 
   const updateDeliveryStatus = async (orderId, status) => {
     try {
@@ -2529,6 +2534,13 @@ const DriverDashboard = () => {
       console.error('Error completing delivery:', err.response || err);
       toast.error('Failed to complete delivery');
     }
+  };
+
+  const handleChangeDriver = () => {
+    localStorage.removeItem('selectedDriverId');
+    setDriverId(null);
+    setDriverInfo(null);
+    toast.info("Driver deselected. Please refresh or re-login to choose a driver.");
   };
 
   const handleCODPayment = async (e) => {
@@ -2598,62 +2610,62 @@ const DriverDashboard = () => {
     );
   }
 
-  // Show driver selector if needed
-  if (showDriverSelector) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <h1 className="text-2xl font-bold mb-4 text-gray-800">Driver Selection</h1>
+  // // Show driver selector if needed
+  // if (showDriverSelector) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-8">
+  //       <div className="bg-white shadow-lg rounded-lg p-6">
+  //         <h1 className="text-2xl font-bold mb-4 text-gray-800">Driver Selection</h1>
           
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              <p>{error}</p>
-            </div>
-          )}
+  //         {error && (
+  //           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+  //             <p>{error}</p>
+  //           </div>
+  //         )}
           
-          {availableDrivers.length > 0 ? (
-            <div>
-              <p className="mb-4">Please select a driver to continue:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {availableDrivers.map(driver => (
-                  <button
-                    key={driver._id}
-                    onClick={() => handleSelectDriver(driver._id)}
-                    className="bg-white border border-gray-300 p-4 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all"
-                  >
-                    <h3 className="font-medium text-lg text-gray-800">{driver.name}</h3>
-                    <p className="text-gray-600">{driver.email}</p>
-                    <p className="text-sm text-gray-500">License: {driver.licenseNumber}</p>
-                    <p className="mt-2 text-xs font-medium text-blue-600">
-                      {driver.availability ? 'Available' : 'Unavailable'}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : !error ? (
-            <p className="text-center py-4 text-gray-500">Loading drivers...</p>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
+  //         {availableDrivers.length > 0 ? (
+  //           <div>
+  //             <p className="mb-4">Please select a driver to continue:</p>
+  //             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  //               {availableDrivers.map(driver => (
+  //                 <button
+  //                   key={driver._id}
+  //                   onClick={() => handleSelectDriver(driver._id)}
+  //                   className="bg-white border border-gray-300 p-4 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all"
+  //                 >
+  //                   <h3 className="font-medium text-lg text-gray-800">{driver.name}</h3>
+  //                   <p className="text-gray-600">{driver.email}</p>
+  //                   <p className="text-sm text-gray-500">License: {driver.licenseNumber}</p>
+  //                   <p className="mt-2 text-xs font-medium text-blue-600">
+  //                     {driver.availability ? 'Available' : 'Unavailable'}
+  //                   </p>
+  //                 </button>
+  //               ))}
+  //             </div>
+  //           </div>
+  //         ) : !error ? (
+  //           <p className="text-center py-4 text-gray-500">Loading drivers...</p>
+  //         ) : null}
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <p>{error}</p>
-          <button 
-            onClick={handleChangeDriver}
-            className="mt-3 bg-red-200 hover:bg-red-300 text-red-800 font-bold py-2 px-4 rounded"
-          >
-            Select Different Driver
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-8">
+  //       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+  //         <p>{error}</p>
+  //         <button 
+  //           onClick={handleChangeDriver}
+  //           className="mt-3 bg-red-200 hover:bg-red-300 text-red-800 font-bold py-2 px-4 rounded"
+  //         >
+  //           Select Different Driver
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Safely filter deliveries with null checks and separated by status
   const assignedDeliveries = Array.isArray(deliveries) ? 
@@ -2669,6 +2681,10 @@ const DriverDashboard = () => {
       delivery?.deliveryStatus === 'Delivered' || delivery?.deliveryStatus === 'Delivery Failed'
     ) : [];
 
+
+    
+    
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
@@ -2677,19 +2693,19 @@ const DriverDashboard = () => {
             <h1 className="text-2xl font-bold mb-2 text-gray-800">Driver Dashboard</h1>
             {driverInfo && (
               <div className="text-center">
-                <p className="text-lg"><span className="font-medium">Name:</span> Kamal</p>
+                <p className="text-lg"><span className="font-medium">Name:</span> {UserService.getCurrentUsername()}</p>
                 <p className="text-green-600 font-medium">
-                  Total Completed Deliveries: 30
+                  Total Completed Deliveries: {completedDeliveries.length || 0}
                 </p>
               </div>
             )}
           </div>
           
           <button 
-            onClick={handleChangeDriver}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded"
+            onClick={logout}
+            className="bg-red-700 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded"
           >
-            Change Driver
+            Logout
           </button>
         </div>
       </div>
