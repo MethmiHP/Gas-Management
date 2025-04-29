@@ -4,25 +4,29 @@ import { toast } from 'react-toastify';
 
 const DriverPage = () => {
   const [drivers, setDrivers] = useState([]);
+  const [allDrivers, setAllDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    licenseNumber: '',
-    availability: true
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentDriverId, setCurrentDriverId] = useState(null);
   const [driverDeliveries, setDriverDeliveries] = useState([]);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
+  const [licenseInputs, setLicenseInputs] = useState({});
+  const [isFetchingDeliveries, setIsFetchingDeliveries] = useState(false);
+  const [addingDriverId, setAddingDriverId] = useState(null);
 
-  // Fetch all drivers when component mounts
   useEffect(() => {
     fetchDrivers();
+    fetchAllRegisteredDrivers();
   }, []);
 
-  // Fetch all drivers
+  const fetchAllRegisteredDrivers = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/auth/alldriver');
+      setAllDrivers(response?.data?.data || []);
+    } catch (error) {
+      console.error('Error fetching registered drivers:', error);
+      toast.error('Failed to fetch registered drivers');
+    }
+  };
+
   const fetchDrivers = async () => {
     setLoading(true);
     try {
@@ -36,8 +40,8 @@ const DriverPage = () => {
     }
   };
 
-  // Fetch deliveries for a specific driver
   const fetchDriverDeliveries = async (driverId) => {
+    setIsFetchingDeliveries(true);
     try {
       const response = await axios.get(`http://localhost:5000/deliveries/driver/${driverId}`);
       setDriverDeliveries(response.data.deliveries || []);
@@ -45,115 +49,90 @@ const DriverPage = () => {
     } catch (error) {
       console.error('Error fetching driver deliveries:', error);
       toast.error('Failed to fetch deliveries for this driver');
-      setDriverDeliveries([]);
+    } finally {
+      setIsFetchingDeliveries(false);
     }
   };
 
-  // Handle form input changes
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+  const handleLicenseInputChange = (driverId, value) => {
+    setLicenseInputs((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [driverId]: value
     }));
   };
 
-  // Add a new driver
-  const addDriver = async (e) => {
-    e.preventDefault();
+  const handleAddDriver = async (driver) => {
+    const licenseNumber = licenseInputs[driver._id];
+    if (!licenseNumber) {
+      toast.error('Please enter a license number');
+      return;
+    }
+
+    const alreadyExists = drivers.some(d => d.email === driver.email);
+    if (alreadyExists) {
+      toast.warning('Driver already exists');
+      setLicenseInputs((prev) => ({ ...prev, [driver._id]: '' }));
+      return;
+    }
+
+    setAddingDriverId(driver._id);
     try {
-      const response = await axios.post('http://localhost:5000/drivers', formData);
-      toast.success('Driver added successfully!');
-      setDrivers([...drivers, response.data.driver]);
-      resetForm();
+      const response = await axios.post('http://localhost:5000/drivers', {
+        name: driver.username,
+        email: driver.email,
+        licenseNumber,
+        availability: true
+      });
+
+      toast.success('Driver added successfully');
+      setDrivers((prev) => [...prev, response.data.driver]);
+      setLicenseInputs((prev) => ({ ...prev, [driver._id]: '' }));
     } catch (error) {
       console.error('Error adding driver:', error);
       toast.error(error.response?.data?.message || 'Failed to add driver');
+    } finally {
+      setAddingDriverId(null);
     }
   };
 
-  // Update a driver
-  const updateDriver = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.put(`http://localhost:5000/drivers/${currentDriverId}`, formData);
-      toast.success('Driver updated successfully!');
-      setDrivers(drivers.map(driver => 
-        driver._id === currentDriverId ? response.data.driver : driver
-      ));
-      setIsEditing(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error updating driver:', error);
-      toast.error(error.response?.data?.message || 'Failed to update driver');
-    }
-  };
-
-  // Delete a driver
   const deleteDriver = async (id) => {
-    if (window.confirm('Are you sure you want to delete this driver?')) {
-      try {
-        await axios.delete(`http://localhost:5000/drivers/${id}`);
-        toast.success('Driver deleted successfully!');
-        setDrivers(drivers.filter(driver => driver._id !== id));
-        if (selectedDriverId === id) {
-          setSelectedDriverId(null);
-          setDriverDeliveries([]);
-        }
-      } catch (error) {
-        console.error('Error deleting driver:', error);
-        toast.error(error.response?.data?.message || 'Failed to delete driver');
+    if (!window.confirm('Are you sure you want to delete this driver?')) return;
+
+    try {
+      await axios.delete(`http://localhost:5000/drivers/${id}`);
+      setDrivers(drivers.filter(driver => driver._id !== id));
+      toast.success('Driver deleted successfully');
+
+      if (selectedDriverId === id) {
+        setSelectedDriverId(null);
+        setDriverDeliveries([]);
       }
+    } catch (error) {
+      console.error('Error deleting driver:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete driver');
     }
   };
 
-  // Toggle driver availability
   const toggleAvailability = async (driver) => {
     try {
-      const newAvailability = !driver.availability;
       const response = await axios.put(`http://localhost:5000/drivers/${driver._id}`, {
         ...driver,
-        availability: newAvailability
+        availability: !driver.availability
       });
-      toast.success(`Driver marked as ${newAvailability ? 'available' : 'unavailable'}`);
-      setDrivers(drivers.map(d => 
+
+      setDrivers(drivers.map(d =>
         d._id === driver._id ? response.data.driver : d
       ));
+
+      toast.success(`Driver marked as ${response.data.driver.availability ? 'Available' : 'Unavailable'}`);
     } catch (error) {
-      console.error('Error updating driver availability:', error);
-      toast.error('Failed to update driver availability');
+      console.error('Error updating availability:', error);
+      toast.error('Failed to update availability');
     }
   };
 
-  // Set form data for editing
-  const editDriver = (driver) => {
-    setFormData({
-      name: driver.name,
-      email: driver.email,
-      phone: driver.phone,
-      licenseNumber: driver.licenseNumber,
-      availability: driver.availability
-    });
-    setCurrentDriverId(driver._id);
-    setIsEditing(true);
-  };
-
-  // Reset form after submission
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      licenseNumber: '',
-      availability: true
-    });
-    setCurrentDriverId(null);
-    setIsEditing(false);
-  };
-
-  // Get status badge color
   const getStatusBadgeColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Pending': return 'bg-yellow-200 text-yellow-800';
       case 'Assigned': return 'bg-blue-200 text-blue-800';
       case 'Out For Delivery': return 'bg-purple-200 text-purple-800';
@@ -166,177 +145,109 @@ const DriverPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-center mb-8">Driver Management</h1>
-      
-      {/* Add/Edit Driver Form */}
-      <div className="mb-10 bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">{isEditing ? 'Edit Driver' : 'Add New Driver'}</h2>
-        <form onSubmit={isEditing ? updateDriver : addDriver} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+
+  {/* License Assignment */}
+  <div className="bg-white p-6 rounded-lg shadow-md mb-10">
+    <h2 className="text-xl font-semibold mb-4">Assign License Numbers</h2>
+
+  <div className="space-y-4">
+    {allDrivers
+      .filter(driver =>
+        !drivers.some(existing => existing.email === driver.email) && !driver.licenseNumber // Skip if already added or already has license
+      )
+      .map(driver => {
+        const driverKey = driver._id || driver.id;
+        return (
+          <div key={driverKey} className="border p-4 rounded-md shadow-sm">
+            <p className="font-medium">{driver.username}</p>
             <input
               type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Driver Name"
-              className="w-full rounded-md border-gray-300 shadow-sm px-4 py-2"
-              required
+              placeholder="Enter License Number"
+              value={licenseInputs[driverKey] || ''}
+              onChange={(e) => handleLicenseInputChange(driverKey, e.target.value)}
+              className="w-full mt-2 rounded-md border px-4 py-2"
             />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email Address"
-              className="w-full rounded-md border-gray-300 shadow-sm px-4 py-2"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Phone Number"
-              className="w-full rounded-md border-gray-300 shadow-sm px-4 py-2"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-            <input
-              type="text"
-              name="licenseNumber"
-              value={formData.licenseNumber}
-              onChange={handleChange}
-              placeholder="License Number"
-              className="w-full rounded-md border-gray-300 shadow-sm px-4 py-2"
-              required
-            />
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="availability"
-                checked={formData.availability}
-                onChange={handleChange}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              />
-              <span className="ml-2 text-sm text-gray-700">Available for deliveries</span>
-            </label>
-          </div>
-          
-          <div className="md:col-span-2 flex gap-2 justify-end mt-4">
-            {isEditing && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition"
-              >
-                Cancel
-              </button>
-            )}
             <button
-              type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md transition"
+              onClick={() => handleAddDriver({ ...driver, _id: driverKey })}
+              disabled={addingDriverId === driverKey}
+              className="mt-2 bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded-md disabled:opacity-50"
             >
-              {isEditing ? 'Update Driver' : 'Add Driver'}
+              {addingDriverId === driverKey ? 'Adding...' : 'Add'}
             </button>
           </div>
-        </form>
-      </div>
-      
-      {/* Drivers Table */}
-      <div className="mb-10 bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+        );
+      })}
+  </div>
+</div>
+
+
+      {/* Driver Table */}
+      <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto mb-10">
         <h2 className="text-xl font-semibold mb-4">All Drivers</h2>
         {loading ? (
-          <p className="text-center py-4">Loading...</p>
-        ) : drivers.length > 0 ? (
+          <p>Loading...</p>
+        ) : drivers.length === 0 ? (
+          <p>No drivers found.</p>
+        ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">License</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deliveries</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left">Name</th>
+                <th className="px-6 py-3 text-left">Contact</th>
+                <th className="px-6 py-3 text-left">License</th>
+                <th className="px-6 py-3 text-left">Status</th>
+                <th className="px-6 py-3 text-left">Deliveries</th>
+                <th className="px-6 py-3 text-left">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {drivers.map((driver) => (
-                <tr key={driver._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                    {driver.name}
-                  </td>
+            <tbody className="divide-y divide-gray-200">
+              {drivers.map(driver => (
+                <tr key={driver._id}>
+                  <td className="px-6 py-4">{driver.name}</td>
                   <td className="px-6 py-4">
                     <div>{driver.email}</div>
                     <div className="text-sm text-gray-500">{driver.phone}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {driver.licenseNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">{driver.licenseNumber}</td>
+                  <td className="px-6 py-4">
                     <button
                       onClick={() => toggleAvailability(driver)}
                       className={`${
                         driver.availability
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
                       } px-3 py-1 rounded-full text-sm font-medium transition`}
                     >
                       {driver.availability ? 'Available' : 'Unavailable'}
                     </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="mr-2">{driver.completedDeliveries}</span>
-                      <button
-                        onClick={() => fetchDriverDeliveries(driver._id)}
-                        className="text-blue-600 hover:text-blue-900 text-sm"
-                      >
-                        View
-                      </button>
-                    </div>
+                  <td className="px-6 py-4">
+                    <span>{driver.completedDeliveries || 0}</span>{' '}
+                    <button
+                      onClick={() => fetchDriverDeliveries(driver._id)}
+                      className="text-blue-600 text-sm ml-2"
+                    >
+                      View
+                    </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => editDriver(driver)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteDriver(driver._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => deleteDriver(driver._id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        ) : (
-          <p className="text-center py-4 text-gray-500">No drivers found</p>
         )}
       </div>
-      
-      {/* Driver Deliveries */}
+
+      {/* Deliveries View */}
       {selectedDriverId && (
-        <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+        <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">
               Deliveries for {drivers.find(d => d._id === selectedDriverId)?.name || 'Driver'}
@@ -351,43 +262,45 @@ const DriverPage = () => {
               Close
             </button>
           </div>
-          
-          {driverDeliveries.length > 0 ? (
+
+          {isFetchingDeliveries ? (
+            <p>Loading deliveries...</p>
+          ) : driverDeliveries.length === 0 ? (
+            <p>No deliveries found.</p>
+          ) : (
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                  <th className="px-6 py-3 text-left">Order ID</th>
+                  <th className="px-6 py-3 text-left">Customer</th>
+                  <th className="px-6 py-3 text-left">Status</th>
+                  <th className="px-6 py-3 text-left">Date</th>
+                  <th className="px-6 py-3 text-left">Payment</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200">
                 {driverDeliveries.map((delivery) => (
-                  <tr key={delivery._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">{delivery.orderId}</td>
+                  <tr key={delivery._id}>
+                    <td className="px-6 py-4">{delivery.orderId}</td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{delivery.customerName}</div>
+                      <div>{delivery.customerName}</div>
                       <div className="text-sm text-gray-500">{delivery.phone}</div>
-                      <div className="text-xs text-gray-500 mt-1">{delivery.address}</div>
+                      <div className="text-xs">{delivery.address}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <span className={`${getStatusBadgeColor(delivery.deliveryStatus)} px-2 py-1 rounded-full text-sm`}>
                         {delivery.deliveryStatus}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {new Date(delivery.deliveryDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">{new Date(delivery.deliveryDate).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">
                       <div>{delivery.paymentMethod}</div>
                       {delivery.paymentMethod === 'Cash On Delivery' && (
-                        <div className="mt-1 text-sm">
+                        <div className="text-sm mt-1">
                           {delivery.codPaid ? (
                             <span className="text-green-600">Paid (${delivery.amountReceived})</span>
                           ) : (
-                            <span className="text-yellow-600">Payment Pending</span>
+                            <span className="text-yellow-600">Pending</span>
                           )}
                         </div>
                       )}
@@ -396,8 +309,6 @@ const DriverPage = () => {
                 ))}
               </tbody>
             </table>
-          ) : (
-            <p className="text-center py-4 text-gray-500">No deliveries found for this driver</p>
           )}
         </div>
       )}

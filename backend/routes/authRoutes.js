@@ -8,7 +8,8 @@ const {
   updateUserById,
   deleteUser,
   updateProfile,
-  changePassword
+  changePassword,
+  getAllDrivers,
 } = require("../controllers/authController");
 const { protect, authorize } = require("../middlewares/authMiddleware");
 
@@ -24,6 +25,7 @@ router.put("/me", protect, updateProfile);
 router.post("/change-password", protect, changePassword);
 
 // Admin only routes
+router.get("/alldriver", getAllDrivers);
 router.get("/users", protect, authorize("admin"), getAllUsers);
 router.get("/users/:id", protect, authorize("admin"), getUserById);
 router.put("/users/:id", protect, authorize("admin"), updateUserById);

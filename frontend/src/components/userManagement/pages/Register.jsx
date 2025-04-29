@@ -46,7 +46,8 @@ const Register = () => {
       
       // Navigate based on user role
       if (role === 'driver') {
-        navigate('/driver/dashboard');
+        toast.info('Please wait for admin approval.');
+        navigate('/login');
       } else {
         navigate('/customer/dashboard');
       }
