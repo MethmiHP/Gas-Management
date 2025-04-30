@@ -84,7 +84,7 @@ function App() {
             <Route path="/track" element={<TrackingOrder />} />
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/driver/dashboard" element={<DriverDashboard />} /> {/* Add this line */}
+            
             <Route path="/admin/dashboard/inventory" element={
               <ProtectedRoute roles={['admin']}>
                 <AdminProductManagement />
@@ -115,7 +115,7 @@ function App() {
                       <AdminProductManagement />
                     </ProtectedRoute>
                   } />
-
+                  <Route path="/driver/dashboard" element={<DriverDashboard />} /> {/* Add this line */}
                    <Route path="/view-all-deliveries" element={<ViewAllDeliveries />} /> {/* Add this line */}
                   <Route path="driver-layout" element={<Driverlayout />} />
                   <Route path="deliveries" element={<Delivery />} />

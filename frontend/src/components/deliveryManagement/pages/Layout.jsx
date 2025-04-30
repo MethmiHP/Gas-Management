@@ -47,6 +47,13 @@ const Layout = ({ children }) => {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    console.log("User logged out, localStorage cleared");
+    window.location.href = '/login';
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar backdrop */}
@@ -138,13 +145,14 @@ const Layout = ({ children }) => {
                   A
                 </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-white">Admin User</p>
-                <p className="text-xs text-blue-300">admin@nelsongas.com</p>
-              </div>
-              <button className="ml-auto text-blue-300 hover:text-white">
-                <LogOut size={18} />
-              </button>
+             
+  <button 
+    onClick={logout}
+    className="bg-blue-700 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded"
+  >
+    Logout
+  </button>
+
             </div>
           </div>
         </div>
