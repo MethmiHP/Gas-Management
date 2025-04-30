@@ -2960,7 +2960,7 @@ const DriverDashboard = () => {
                         {delivery.paymentMethod}
                         {delivery.paymentMethod === 'Cash On Delivery' && (
                           <span className={`ml-2 text-xs ${delivery.codPaid ? 'text-green-600' : 'text-red-600'}`}>
-                            {delivery.codPaid ? `(Paid: $${delivery.amountReceived})` : '(Unpaid)'}
+                            {delivery.codPaid ? `(Paid: LKR${delivery.amountReceived})` : '(Unpaid)'}
                           </span>
                         )}
                       </td>

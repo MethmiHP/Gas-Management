@@ -68,6 +68,12 @@ const DriverPage = () => {
       return;
     }
 
+    const sriLankaLicenseRegex = /(^[A-Z]{1}[0-9]{7}$)|(^20[0-9]{2}[0-9]{7,8}$)/;
+    if (!sriLankaLicenseRegex.test(licenseNumber.trim())) {
+      toast.error('Invalid Sri Lankan license number format');
+      return;
+    }
+
     const alreadyExists = drivers.some(d => d.email === driver.email);
     if (alreadyExists) {
       toast.warning('Driver already exists');
@@ -298,7 +304,7 @@ const DriverPage = () => {
                       {delivery.paymentMethod === 'Cash On Delivery' && (
                         <div className="text-sm mt-1">
                           {delivery.codPaid ? (
-                            <span className="text-green-600">Paid (${delivery.amountReceived})</span>
+                            <span className="text-green-600">Paid (LKR{delivery.amountReceived})</span>
                           ) : (
                             <span className="text-yellow-600">Pending</span>
                           )}

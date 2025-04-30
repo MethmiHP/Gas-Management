@@ -142,7 +142,7 @@ const ViewAllDeliveries = () => {
       
       // Add payment information if it's Cash On Delivery
       if (delivery.paymentMethod === 'Cash On Delivery') {
-        const paymentStatus = delivery.codPaid ? `Paid (${delivery.amountReceived})` : 'Pending';
+        const paymentStatus = delivery.codPaid ? `Paid (LKR{delivery.amountReceived})` : 'Pending';
         doc.text(`Payment Status: ${paymentStatus}`, 20, 120);
       }
       
@@ -441,7 +441,7 @@ const ViewAllDeliveries = () => {
                           {delivery.paymentMethod === 'Cash On Delivery' && (
                             <div className="mt-1 text-xs">
                               {delivery.codPaid ? (
-                                <span className="text-green-600">Paid (${delivery.amountReceived})</span>
+                                <span className="text-green-600">Paid (LKR{delivery.amountReceived})</span>
                               ) : (
                                 <span className="text-yellow-600">Payment Pending</span>
                               )}

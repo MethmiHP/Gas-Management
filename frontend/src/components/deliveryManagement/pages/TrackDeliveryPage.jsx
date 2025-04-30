@@ -564,7 +564,7 @@ const TrackDeliveryPage = () => {
                     {orderData.codPaid && (
                       <p className="mt-3 flex items-center">
                         <span className="font-medium mr-2">Amount Received:</span>
-                        <span className="text-gray-700 font-semibold">${orderData.amountReceived}</span>
+                        <span className="text-gray-700 font-semibold">LKR {orderData.amountReceived}</span>
                       </p>
                     )}
                   </div>

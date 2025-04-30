@@ -445,7 +445,7 @@ const DeliveryPage = () => {
                       <div className="mt-1">
                         {delivery.codPaid ? (
                           <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
-                            Paid (${delivery.amountReceived})
+                            Paid (LKR{delivery.amountReceived})
                           </span>
                         ) : (
                           <button
